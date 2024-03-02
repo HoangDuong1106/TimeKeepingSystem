@@ -170,3 +170,39 @@ DataAccess/bin/Release/net6.0/BusinessObject.dll
 BusinessObject/obj/Release/net6.0/ref/BusinessObject.dll
 BusinessObject/obj/Release/net6.0/BusinessObject.pdb
 BusinessObject/obj/Release/net6.0/BusinessObject.dll
+BusinessObject/obj/Debug/net6.0/BusinessObject.csproj.FileListAbsolute.txt
+
+# From .NET Core 3.0 you can use the command: `dotnet new gitignore` to generate a customizable .gitignore file
+
+*.swp
+*.*~
+project.lock.json
+.DS_Store
+*.pyc
+
+# Visual Studio Code
+.vscode
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+build/
+bld/
+[Bb]in/
+[Oo]bj/
+msbuild.log
+msbuild.err
+msbuild.wrn
+
+# Visual Studio 2015
+.vs/
