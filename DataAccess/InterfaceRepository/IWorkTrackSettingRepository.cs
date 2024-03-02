@@ -1,0 +1,1 @@
+namespace DataAccess.InterfaceRepository { public interface IWorkTrackSettingRepository { Task<bool> SoftDeleteAsync(Guid id); } }

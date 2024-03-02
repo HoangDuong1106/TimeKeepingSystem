@@ -1,0 +1,16 @@
+D:\Dan\timekeepingsystem\DataAccess\bin\Release\net6.0\appsettings.Development.json
+D:\Dan\timekeepingsystem\DataAccess\bin\Release\net6.0\DataAccess.deps.json
+D:\Dan\timekeepingsystem\DataAccess\bin\Release\net6.0\DataAccess.dll
+D:\Dan\timekeepingsystem\DataAccess\bin\Release\net6.0\DataAccess.pdb
+D:\Dan\timekeepingsystem\DataAccess\bin\Release\net6.0\BusinessObject.dll
+D:\Dan\timekeepingsystem\DataAccess\bin\Release\net6.0\BusinessObject.pdb
+D:\Dan\timekeepingsystem\DataAccess\obj\Release\net6.0\DataAccess.csproj.AssemblyReference.cache
+D:\Dan\timekeepingsystem\DataAccess\obj\Release\net6.0\DataAccess.GeneratedMSBuildEditorConfig.editorconfig
+D:\Dan\timekeepingsystem\DataAccess\obj\Release\net6.0\DataAccess.AssemblyInfoInputs.cache
+D:\Dan\timekeepingsystem\DataAccess\obj\Release\net6.0\DataAccess.AssemblyInfo.cs
+D:\Dan\timekeepingsystem\DataAccess\obj\Release\net6.0\DataAccess.csproj.CoreCompileInputs.cache
+D:\Dan\timekeepingsystem\DataAccess\obj\Release\net6.0\DataAccess.csproj.CopyComplete
+D:\Dan\timekeepingsystem\DataAccess\obj\Release\net6.0\DataAccess.dll
+D:\Dan\timekeepingsystem\DataAccess\obj\Release\net6.0\refint\DataAccess.dll
+D:\Dan\timekeepingsystem\DataAccess\obj\Release\net6.0\DataAccess.pdb
+D:\Dan\timekeepingsystem\DataAccess\obj\Release\net6.0\ref\DataAccess.dll

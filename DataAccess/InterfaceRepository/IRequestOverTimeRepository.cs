@@ -1,0 +1,3 @@
+using BusinessObject.DTO;
+
+namespace DataAccess.InterfaceRepository { public interface IRequestOverTimeRepository { Task<object> CreateRequestOvertime(CreateRequestOverTimeDTO dto, Guid employeeId); Task<object> EditRequestOvertimeOfEmployee(EditRequestOverTimeDTO dto, Guid employeeId); Task<List<RequestOverTimeDTO>> GetAllAsync(); List<RequestOverTimeDTO> GetAllRequestOverTime(string? nameSearch, int status, DateTime month); object GetRequestOverTimeOfEmployeeById(Guid employeeId); Task<bool> SoftDeleteAsync(Guid id); } }

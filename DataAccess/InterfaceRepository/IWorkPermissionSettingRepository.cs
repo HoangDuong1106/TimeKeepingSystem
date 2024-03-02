@@ -1,0 +1,1 @@
+namespace DataAccess.InterfaceRepository { public interface IWorkPermissionSettingRepository { Task<bool> SoftDeleteAsync(Guid id); } }

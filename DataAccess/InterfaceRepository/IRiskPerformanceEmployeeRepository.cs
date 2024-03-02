@@ -1,0 +1,1 @@
+namespace DataAccess.InterfaceRepository { public interface IRiskPerformanceEmployeeRepository { Task<bool> SoftDeleteAsync(Guid id); } }

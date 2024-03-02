@@ -1,0 +1,3 @@
+using BusinessObject.DTO;
+
+namespace DataAccess.InterfaceRepository { public interface IWorkslotEmployeeRepository { Task<object> CheckInOutForPeriod(Guid employeeId, DateTime startDate, DateTime endDate); Task<object> CheckInWorkslotEmployee(Guid employeeId, DateTime? currentTime); Task<object> CheckOutWorkslotEmployee(Guid employeeId, DateTime? currentTime); Task<string> ExportWorkSlotEmployeeReport(Guid departmentId); Task<object> GenerateWorkSlotEmployee(CreateWorkSlotRequest request); Task<object> GetWorkSlotEmployeeByEmployeeId(Guid employeeId); Task<object> GetWorkSlotEmployeeByEmployeeIdForToday(Guid employeeId); Task<object> GetWorkSlotEmployeesByDepartmentId(Guid departmentId, string startTime, string endTime); Task<bool> SoftDeleteAsync(Guid id); } }
