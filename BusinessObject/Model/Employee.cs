@@ -36,6 +36,9 @@ public class Employee
     public string? PhoneNumber { get; set; }
 
     [Required]
+    public string EmploymentType { get; set; } // Add EmploymentType property
+
+    [Required]
     public EmployeeStatus EmployeeStatus { get; set; }
 
     [ForeignKey("Department")]

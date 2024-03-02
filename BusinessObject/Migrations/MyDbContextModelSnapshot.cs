@@ -182,6 +182,13 @@ namespace BusinessObject.Migrations
                     b.Property<int>("EmployeeStatus")
                         .HasColumnType("int");
 
+                    b.Property<string>("EmploymentType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("FullTime");
+
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(50)
