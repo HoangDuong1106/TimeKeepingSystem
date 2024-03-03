@@ -163,6 +163,7 @@ DataAccess/obj/Release/net6.0/DataAccess.dll
 TimeKeepingSystem/obj/Release/net6.0/TimeKeepingSystem.dll
 *.pdb
 *.json
+!appsettings.json
 *.cache
 *.cache
 *.pdb

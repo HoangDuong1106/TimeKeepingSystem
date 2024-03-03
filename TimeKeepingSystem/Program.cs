@@ -24,8 +24,8 @@ var secretKey = configuration["Appsettings:SecretKey"];
 var secretKeyBytes = Encoding.UTF8.GetBytes(secretKey);
 ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 builder.Services.AddDbContext<MyDbContext>(options =>
-//options.UseSqlServer(configuration.GetConnectionString("online")));
-options.UseSqlServer(configuration.GetConnectionString("somee")));
+//options.UseSqlServer(configuration.GetConnectionString("local")));
+options.UseSqlServer(configuration.GetConnectionString("online")));
 builder.Services.AddControllersWithViews()
     .AddNewtonsoftJson(options =>
     options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore

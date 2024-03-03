@@ -13,8 +13,8 @@ namespace TimeKeepingSystem
                 .Build();
 
             var optionsBuilder = new DbContextOptionsBuilder<MyDbContext>();
-            //optionsBuilder.UseSqlServer(configuration.GetConnectionString("online"));
-            optionsBuilder.UseSqlServer(configuration.GetConnectionString("somee"));
+            //optionsBuilder.UseSqlServer(configuration.GetConnectionString("local"));
+            optionsBuilder.UseSqlServer(configuration.GetConnectionString("online"));
 
             return new MyDbContext(optionsBuilder.Options, configuration);
         }

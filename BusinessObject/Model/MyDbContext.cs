@@ -44,10 +44,8 @@ public class MyDbContext : DbContext
         base.OnConfiguring(optionsBuilder);
         if (!optionsBuilder.IsConfigured)
         {
-            optionsBuilder.UseSqlServer("Data Source=SQL5075.site4now.net;Initial Catalog=db_a9e982_guma11066;User Id=db_a9e982_guma11066_admin;Password=guma1106;;Encrypt=True;TrustServerCertificate=True;");
-            //optionsBuilder.UseSqlServer("Server=DESKTOP-14337NG;Database=TimeSystem;User id=sa;Password=root;TrustServerCertificate=true;");
-            //optionsBuilder.UseSqlServer("Server=tcp:time-keeping.database.windows.net,1433;Initial Catalog=TimeKeeping;Persist Security Info=False;User ID=guma1234;Password=admin1234!;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;");
-            //optionsBuilder.UseSqlServer("workstation id=TimeKeepingSystem.mssql.somee.com;packet size=4096;user id=tiensidiien_SQLLogin_1;pwd=uaeovuatgl;data source=TimeKeepingSystem.mssql.somee.com;persist security info=False;initial catalog=TimeKeepingSystem");
+            //optionsBuilder.UseSqlServer("Server=DESKTOP-14337NG;Database=TimeBackup;User id=sa;Password=root;TrustServerCertificate=true;");
+            optionsBuilder.UseSqlServer("Server=tcp:time-keeping.database.windows.net,1433;Initial Catalog=TimeSystem;Persist Security Info=False;User ID=guma1234;Password=doan1234!;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;");
         }
     }
 
