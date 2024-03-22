@@ -24,12 +24,14 @@ namespace TimeKeepingSystem.Controllers
         private readonly IConfiguration configuration;
         private readonly IWorkDateSettingService _service;
         private readonly IDepartmentService _departmentService;
-        public DepartmentController(IUserAccountRepository _repositoryAccount, IConfiguration configuration, IWorkDateSettingService service, IDepartmentService departmentService)
+        private readonly IDepartmentRepository _departmentRepository;
+        public DepartmentController(IUserAccountRepository _repositoryAccount, IConfiguration configuration, IWorkDateSettingService service, IDepartmentService departmentService, IDepartmentRepository departmentRepository)
         {
             repositoryAccount = _repositoryAccount;
             this.configuration = configuration;
             _service = service;
             _departmentService = departmentService;
+            _departmentRepository = departmentRepository;
         }
 
         [HttpGet]
@@ -200,6 +202,12 @@ namespace TimeKeepingSystem.Controllers
         public List<DepartmentDTO> GetDepartmentsWithoutManager()
         {
             return _departmentService.GetDepartmentsWithoutManager();
+        }
+
+        [HttpGet("get-department-info-by-employee-id")]
+        public Task<object> GetTeamInfoByEmployeeIdAsync(Guid employeeId)
+        {
+            return _departmentRepository.GetTeamInfoByEmployeeIdAsync(employeeId);
         }
     }
 }
