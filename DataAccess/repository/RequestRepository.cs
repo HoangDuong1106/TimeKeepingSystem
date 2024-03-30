@@ -31,48 +31,81 @@ namespace DataAccess.Repository
             var combinedRequests = new CombinedRequestDTO();
 
             // Populate OverTimeRequests
-            var overtimeRequests = _dbContext.Requests.Include(r => r.RequestOverTime)
-                .Where(r => !r.IsDeleted && r.EmployeeSendRequestId == employeeId && r.requestType == RequestType.OverTime)
-                .Select(r => new RequestOverTimeDTO
-                {
-                    // Assuming the mapping is correct; adjust based on your actual RequestOverTimeDTO structure
-                    id = r.Id,
-                    RequestOverTimeId = r.RequestOverTimeId,
-                    Name = r.RequestOverTime.Name,
-                    Date = r.RequestOverTime.DateOfOverTime.ToString("yyyy/MM/dd"),
-                    timeStart = r.RequestOverTime.FromHour.ToString("HH:mm"),
-                    timeEnd = r.RequestOverTime.ToHour.ToString("HH:mm"),
-                    // Continue mapping other fields...
-                }).ToListAsync();
+            DateTime now = DateTime.Now;
+            var employeeOvertimeRequests = _dbContext.Requests
+                .Include(r => r.RequestOverTime).ThenInclude(rot => rot.WorkingStatus)
+                .Where(r => !r.IsDeleted && r.EmployeeSendRequestId == employeeId && r.requestType == RequestType.OverTime && r.Status == RequestStatus.Approved)
+                .ToList(); // ToList to materialize the query if necessary for complex calculations
 
-            combinedRequests.OverTimeRequests = await overtimeRequests;
+            var timeInYear = employeeOvertimeRequests
+                .Where(r => r.RequestOverTime.DateOfOverTime.Year == now.Year)
+                .Sum(r => r.RequestOverTime.NumberOfHour);
+
+            var timeInMonth = employeeOvertimeRequests
+                .Where(r => r.RequestOverTime.DateOfOverTime.Year == now.Year && r.RequestOverTime.DateOfOverTime.Month == now.Month)
+                .Sum(r => r.RequestOverTime.NumberOfHour);
+
+            combinedRequests.OverTimeRequests = employeeOvertimeRequests
+    .Select(r => new RequestOverTimeDTO
+    {
+        id = r.Id,
+        employeeId = r.EmployeeSendRequestId,
+        employeeName = _dbContext.Employees.Where(e => e.Id == r.EmployeeSendRequestId).Select(e => e.FirstName + " " + e.LastName).FirstOrDefault(),
+        RequestOverTimeId = r.RequestOverTimeId,
+        workingStatusId = r.RequestOverTime.WorkingStatusId,
+        timeStart = r.RequestOverTime.FromHour.ToString("HH:mm"),
+        workingStatus = r.RequestOverTime.WorkingStatus.Name,
+        timeEnd = r.RequestOverTime.ToHour.ToString("HH:mm"),
+        Date = r.RequestOverTime.DateOfOverTime.ToString("yyyy/MM/dd"),
+        NumberOfHour = r.RequestOverTime.NumberOfHour,
+        submitDate = r.SubmitedDate.ToString("yyyy/MM/dd"),
+        status = r.Status.ToString(),
+        IsDeleted = r.RequestOverTime.IsDeleted,
+        linkFile = r.PathAttachmentFile ?? "",
+        reason = r.Reason,
+        timeInMonth = timeInMonth,  // pre-calculated value
+        timeInYear = timeInYear  // pre-calculated value
+    }).ToList();
 
             // Populate WorkTimeRequests
-            var workTimeRequests = _dbContext.Requests.Include(r => r.RequestWorkTime).ThenInclude(rl => rl.WorkslotEmployee).ThenInclude(we => we.Workslot)
-                .Where(r => !r.IsDeleted && r.EmployeeSendRequestId == employeeId && r.requestType == RequestType.WorkTime)
-                .Select(r => new RequestWorkTimeDTO
-                {
-                    // Adjust based on your actual RequestWorkTimeDTO structure
-                    Id = r.Id,
-                    Name = r.RequestWorkTime.Name,
-                    // Continue mapping other fields...
-                }).ToListAsync();
-
-            combinedRequests.WorkTimeRequests = await workTimeRequests;
+            combinedRequests.WorkTimeRequests = await _dbContext.Requests
+    .Include(r => r.RequestWorkTime).ThenInclude(rw => rw.WorkslotEmployee).ThenInclude(we => we.Workslot)
+    .Where(r => !r.IsDeleted && r.EmployeeSendRequestId == employeeId && r.requestType == RequestType.WorkTime)
+    .Select(r => new RequestWorkTimeDTO
+    {
+        Id = r.Id,
+        employeeId = employeeId,
+        employeeName = _dbContext.Employees.Where(e => e.Id == employeeId).Select(e => e.FirstName + " " + e.LastName).FirstOrDefault(),
+        RealHourStart = r.RequestWorkTime.RealHourStart,
+        RealHourEnd = r.RequestWorkTime.RealHourEnd,
+        WorkslotEmployeeId = r.RequestWorkTime.WorkslotEmployeeId,
+        DateOfWorkTime = r.RequestWorkTime.WorkslotEmployee.Workslot.DateOfSlot != null ? r.RequestWorkTime.WorkslotEmployee.Workslot.DateOfSlot.ToString("yyyy/MM/dd") : null,
+        // Add other necessary fields from RequestWorkTimeDTO
+    }).ToListAsync();
 
             // Populate LeaveRequests
-            var leaveRequests = _dbContext.Requests.Include(r => r.RequestLeave).ThenInclude(rl => rl.LeaveType).Include(r => r.RequestLeave).ThenInclude(rl => rl.WorkslotEmployees).ThenInclude(we => we.Workslot)
+            combinedRequests.LeaveRequests = await _dbContext.Requests
+                .Include(r => r.RequestLeave).ThenInclude(rl => rl.LeaveType)
+                .Include(r => r.RequestLeave).ThenInclude(rl => rl.WorkslotEmployees).ThenInclude(we => we.Workslot)
                 .Where(r => !r.IsDeleted && r.EmployeeSendRequestId == employeeId && r.requestType == RequestType.Leave)
                 .Select(r => new LeaveRequestDTO
                 {
-                    // Adjust based on your actual LeaveRequestDTO structure
                     id = r.Id,
+                    employeeId = employeeId,
                     employeeName = _dbContext.Employees.Where(e => e.Id == employeeId).Select(e => e.FirstName + " " + e.LastName).FirstOrDefault(),
-                    // Continue mapping other fields...
+                    submitDate = r.SubmitedDate.ToString("yyyy/MM/dd"),
+                    startDate = r.RequestLeave.FromDate.ToString("yyyy/MM/dd"),
+                    endDate = r.RequestLeave.ToDate.ToString("yyyy/MM/dd"),
+                    leaveTypeId = r.RequestLeave.LeaveTypeId,
+                    leaveType = r.RequestLeave.LeaveType.Name,
+                    status = (int)r.Status,
+                    statusName = r.Status.ToString(),
+                    reason = r.Reason,
+                    linkFile = r.PathAttachmentFile,
+                    numberOfLeaveDate = r.RequestLeave.WorkslotEmployees.Count
+                    // Add other necessary fields from LeaveRequestDTO
                 }).ToListAsync();
-
-            combinedRequests.LeaveRequests = await leaveRequests;
-
+                    
             return combinedRequests;
         }
 

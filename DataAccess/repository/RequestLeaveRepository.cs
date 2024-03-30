@@ -90,6 +90,7 @@ namespace DataAccess.Repository
                     status = (int)r.Status,
                     statusName = r.Status.ToString(),
                     reason = r.Reason,
+                    reasonReject = r.Message,
                     linkFile = r.PathAttachmentFile,
                     dateRange = dateRange,
                 });
@@ -197,6 +198,11 @@ namespace DataAccess.Repository
             if (dto.reason != null)
             {
                 existingRequest.Reason = dto.reason;
+            }
+
+            if (dto.reasonReject != null)
+            {
+                existingRequest.Message = dto.reasonReject;
             }
 
             if (dto.linkFile != null)

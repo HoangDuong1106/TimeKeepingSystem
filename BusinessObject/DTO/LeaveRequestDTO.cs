@@ -22,6 +22,7 @@ namespace BusinessObject.DTO
         public int? status { get; set; }
         public string? statusName { get; set; }
         public string? reason { get; set; }
+        public string? reasonReject { get; set; }
         public string? linkFile { get; set; }
         public double? numberOfLeaveDate { get; set; }
         public List<DateRangeDTO?>? dateRange { get; set; }
