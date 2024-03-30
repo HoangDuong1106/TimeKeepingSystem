@@ -391,47 +391,77 @@ namespace DataAccess.Repository
         {
             var result = new List<RequestWorkTimeDTO>();
             var list = _dbContext.Requests
-                .Include(r => r.RequestWorkTime)
-                .ThenInclude(rw => rw.WorkslotEmployee)
-                .ThenInclude(we => we.Workslot)
-                .Where(r => r.IsDeleted == false)
-                .Where(r => r.requestType == RequestType.WorkTime);
+                        .Include(r => r.RequestWorkTime)
+                        .ThenInclude(rw => rw.WorkslotEmployee)
+                        .ThenInclude(we => we.Workslot)
+                        .Where(r => r.IsDeleted == false && r.requestType == RequestType.WorkTime);
 
-            if (status != -1) list = list.Where(r => (int)r.Status == status);
-            var dateFilter = DateTime.ParseExact(month, "yyyy/MM/dd", CultureInfo.InvariantCulture);
-
-            list.Where(r => r.RequestWorkTime.DateOfSlot.Value.Month == dateFilter.Month && r.RequestWorkTime.DateOfSlot.Value.Year == dateFilter.Year).ToList().ForEach(r =>
+            if (status.HasValue && status != -1)
             {
-                var employee = _dbContext.Employees.Where(e => e.IsDeleted == false && e.Id == r.EmployeeSendRequestId).FirstOrDefault();
-                var allHourWT = _dbContext.Requests.Include(r => r.RequestWorkTime).Where(r => r.EmployeeSendRequestId == employee.Id && r.Status == RequestStatus.Approved).Select(w => w.RequestWorkTime);
-                var timeInMonth = allHourWT.Where(r => r.DateOfSlot.Value.Month == dateFilter.Month && r.DateOfSlot.Value.Year == dateFilter.Year).Count();
-                var timeInYear = allHourWT.Where(r => r.DateOfSlot.Value.Year == dateFilter.Year).Count();
-                result.Add(new RequestWorkTimeDTO()
+                list = list.Where(r => (int)r.Status == status.Value);
+            }
+
+            // Processing the filter only if month is provided
+            int? monthFilter = null;
+            int? yearFilter = null;
+            if (!string.IsNullOrEmpty(month))
+            {
+                var dateFilter = DateTime.ParseExact(month, "yyyy/MM", CultureInfo.InvariantCulture);
+                monthFilter = dateFilter.Month;
+                yearFilter = dateFilter.Year;
+            }
+
+            foreach (var r in list.ToList()) // Materialize the query to avoid repeated database calls
+            {
+                var employee = _dbContext.Employees.FirstOrDefault(e => e.IsDeleted == false && e.Id == r.EmployeeSendRequestId);
+                if (employee == null) continue;
+
+                var allHourWT = _dbContext.Requests
+                    .Where(r => r.EmployeeSendRequestId == employee.Id && r.Status == RequestStatus.Approved && r.requestType == RequestType.WorkTime)
+                    .Select(r => r.RequestWorkTime);
+
+                var employeeId = employee.Id;
+                var employeeName = employee.FirstName + " " + employee.LastName;
+
+                var timeInMonth = 0;
+                var timeInYear = 0;
+
+                if (monthFilter.HasValue && yearFilter.HasValue)
+                {
+                    timeInMonth = allHourWT.Count(wt => wt.DateOfSlot.HasValue && wt.DateOfSlot.Value.Month == monthFilter.Value && wt.DateOfSlot.Value.Year == yearFilter.Value);
+                    timeInYear = allHourWT.Count(wt => wt.DateOfSlot.HasValue && wt.DateOfSlot.Value.Year == yearFilter.Value);
+                }
+                else
+                {
+                    timeInYear = allHourWT.Count(wt => wt.DateOfSlot.HasValue);
+                }
+
+                result.Add(new RequestWorkTimeDTO
                 {
                     Id = r.Id,
-                    employeeId = employee.Id,
-                    employeeName = employee.FirstName + " " + employee.LastName,
-                    RealHourStart = r.RequestWorkTime.RealHourStart,
-                    RealHourEnd = r.RequestWorkTime.RealHourEnd,
-                    NumberOfComeLateHour = r.RequestWorkTime.NumberOfComeLateHour,
-                    NumberOfLeaveEarlyHour = r.RequestWorkTime.NumberOfLeaveEarlyHour,
+                    employeeId = employee?.Id ?? Guid.Empty,
+                    employeeName = employee?.FirstName + " " + employee?.LastName,
+                    RealHourStart = r.RequestWorkTime?.RealHourStart,
+                    RealHourEnd = r.RequestWorkTime?.RealHourEnd,
+                    NumberOfComeLateHour = r.RequestWorkTime?.NumberOfComeLateHour ?? 0,
+                    NumberOfLeaveEarlyHour = r.RequestWorkTime?.NumberOfLeaveEarlyHour ?? 0,
                     TimeInMonth = timeInMonth,
                     TimeInYear = timeInYear,
-                    WorkslotEmployeeId = r.RequestWorkTime.WorkslotEmployeeId,
-                    SlotStart = r.RequestWorkTime.WorkslotEmployee.Workslot.FromHour,
-                    SlotEnd = r.RequestWorkTime.WorkslotEmployee.Workslot.ToHour,
-                    DateOfWorkTime = r.RequestWorkTime.DateOfSlot?.ToString("yyyy/MM/dd"),
+                    WorkslotEmployeeId = r.RequestWorkTime?.WorkslotEmployeeId ?? Guid.Empty,
+                    SlotStart = r.RequestWorkTime?.WorkslotEmployee?.Workslot?.FromHour,
+                    SlotEnd = r.RequestWorkTime?.WorkslotEmployee?.Workslot?.ToHour,
+                    DateOfWorkTime = r.RequestWorkTime?.DateOfSlot?.ToString("yyyy/MM/dd"),
                     linkFile = r.PathAttachmentFile,
-                    Name = r.RequestWorkTime.Name,
-                    submitDate = r.SubmitedDate.ToString("yyyy/MM/dd") ?? "",
+                    Name = r.RequestWorkTime?.Name,
+                    submitDate = r.SubmitedDate.ToString("yyyy/MM/dd"),
                     status = (int)r.Status,
                     statusName = r.Status.ToString(),
                     reason = r.Reason,
-                    IsDeleted = r.RequestWorkTime.IsDeleted
+                    IsDeleted = r.RequestWorkTime?.IsDeleted ?? false
                 });
-            });
+            }
 
-            if (nameSearch != null)
+            if (!string.IsNullOrEmpty(nameSearch))
             {
                 result = result.Where(r => r.employeeName.ToLower().Contains(nameSearch.ToLower())).ToList();
             }
