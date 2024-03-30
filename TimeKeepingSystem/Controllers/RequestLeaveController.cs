@@ -1,5 +1,6 @@
 
 using BusinessObject.DTO;
+using DataAccess.InterfaceRepository;
 using DataAccess.InterfaceService;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -12,11 +13,15 @@ namespace TimeKeepingSystem.Controllers
     {
         private readonly IAttendanceStatusService _service;
         private readonly IRequestLeaveService _requestLeaveService;
+        private readonly IRequestLeaveRepository _requestLeaveRepository;
+        private readonly IRequestRepository _requestRepository;
 
-        public RequestLeaveController(IAttendanceStatusService service, IRequestLeaveService requestLeaveService)
+        public RequestLeaveController(IAttendanceStatusService service, IRequestLeaveService requestLeaveService, IRequestRepository requestRepository, IRequestLeaveRepository requestLeaveRepository)
         {
             _service = service;
             _requestLeaveService = requestLeaveService;
+            _requestRepository = requestRepository;
+            _requestLeaveRepository = requestLeaveRepository;
         }
 
         [HttpGet("get-request-leave-of-employee")]
@@ -103,6 +108,31 @@ namespace TimeKeepingSystem.Controllers
             }
         }
 
+        [HttpGet("get-number-date-leave-each-leave-type-of-employee")]
+        public async Task<ActionResult<object>> GetApprovedLeaveDaysByTypeAsync(Guid employeeId)
+        {
+            try
+            {
+                return Ok(await _requestLeaveRepository.GetApprovedLeaveDaysByTypeAsync(employeeId));         
+                    
+            } catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPatch("cancel-approved-leave-request-for-hr")]
+        public async Task<ActionResult<object>> CancelApprovedLeaveRequest(Guid requestId)
+        {
+            try
+            {
+                return Ok(await _requestLeaveRepository.CancelApprovedLeaveRequest(requestId));
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
     }
 }
 

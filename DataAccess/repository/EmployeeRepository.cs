@@ -38,7 +38,7 @@ namespace DataAccess.Repository
                 EmployeeStatusName = a.EmployeeStatus.ToString() ?? "",
                 UserID = a.UserID,
                 IsDeleted = a.IsDeleted,
-                Type = a.EmploymentType
+                EmploymentType = a.EmploymentType
             }).ToListAsync();
         }
 

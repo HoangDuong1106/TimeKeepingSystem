@@ -393,54 +393,11 @@ namespace DataAccess.Repository
                     }
                     else
                     {
-                        //var workSlot = _dbContext.Workslots.FirstOrDefault(we => we.DateOfSlot.Date == DateTime.ParseExact(dateRange.title, "yyyy/MM/dd", CultureInfo.InvariantCulture).Date && (we.IsMorning ? "Morning" : "Afternoon") == dateRange.type);
-                        //var worktrackSetting = employee.Department.WorkTrackSetting;
-                        //if (workSlot == null)
-                        //{
-                        //    workSlot = new Workslot()
-                        //    {
-                        //        Id = Guid.NewGuid(),
-                        //        Name = DateTime.ParseExact(dateRange.title, "yyyy/MM/dd", CultureInfo.InvariantCulture).DayOfWeek.ToString(),
-                        //        IsMorning = dateRange.type == "Morning" ? true : false,
-                        //        DateOfSlot = DateTime.ParseExact(dateRange.title, "yyyy/MM/dd", CultureInfo.InvariantCulture),
-                        //        IsDeleted = false
-                        //    };
-                        //    await _dbContext.Workslots.AddAsync(workSlot);
-                        //}
-
-                        //var newWorkslotEmployee = new WorkslotEmployee()
-                        //{
-                        //    Id = Guid.NewGuid(),
-                        //    EmployeeId = employeeId,
-                        //    Employee = employee,
-                        //    Workslot = workSlot,
-                        //    WorkslotId = workSlot.Id,
-                        //    AttendanceStatusId = _dbContext.AttendanceStatuses.FirstOrDefault(att => att.LeaveTypeId != null && att.LeaveTypeId == dto.leaveTypeId).Id,
-                        //    AttendanceStatus = _dbContext.AttendanceStatuses.FirstOrDefault(att => att.LeaveTypeId != null && att.LeaveTypeId == dto.leaveTypeId),
-                        //    IsDeleted = false
-                        //};
-
-                        //await _dbContext.WorkslotEmployees.AddAsync(newWorkslotEmployee);
-                        //newWorkslotEmployees.Add(newWorkslotEmployee);
                     }
                 }
                 newRequest.RequestLeave.WorkslotEmployees = new List<WorkslotEmployee>();
                 foreach (var newItem in newWorkslotEmployees)
                 {
-                    //var attendanceStatus = _dbContext.AttendanceStatuses.Include(att => att.LeaveType).FirstOrDefault(att => att.LeaveTypeId == dto.leaveTypeId);
-                    //if (attendanceStatus == null)
-                    //{
-                    //    attendanceStatus = new AttendanceStatus()
-                    //    {
-                    //        Id = Guid.NewGuid(),
-                    //        IsDeleted = false,
-                    //        LeaveType = _dbContext.LeaveTypes.Where(lt => lt.Id == dto.leaveTypeId).FirstOrDefault(),
-                    //        LeaveTypeId = dto.leaveTypeId
-                    //    };
-                    //    await _dbContext.AttendanceStatuses.AddAsync(attendanceStatus);
-                    //}
-                    //newItem.AttendanceStatus = attendanceStatus;
-                    //newItem.AttendanceStatusId = attendanceStatus.Id;
                     newRequest.RequestLeave.WorkslotEmployees.Add(newItem);
                 }
             }
@@ -581,6 +538,63 @@ namespace DataAccess.Repository
             return new { message = "Request approved and WorkslotEmployee updated successfully" };
         }
 
+        public async Task<object> CancelApprovedLeaveRequest(Guid requestId)
+        {
+            // Retrieve the request by requestId
+            var request = await _dbContext.Requests
+                                           .Include(r => r.RequestLeave)
+                                           .FirstOrDefaultAsync(r => r.Id == requestId);
+
+            if (request == null)
+            {
+                return new { message = "Request not found." };
+            }
+
+            // Check if the leave date is in the past
+            if (request.RequestLeave.FromDate.Date < DateTime.Today)
+            {
+                return new { message = "Cannot cancel leave for past dates." };
+            }
+
+            // Check if the request is indeed approved; only approved requests can be cancelled
+            if (request.Status != RequestStatus.Approved)
+            {
+                return new { message = "Only approved requests can be cancelled." };
+            }
+
+            // Set the Request status to Cancelled or Rejected based on your application logic
+            request.Status = RequestStatus.Rejected; // Assuming Cancelled is a defined status in your system
+
+            // Find all WorkslotEmployees that were updated due to this request and reset their attendance status
+            var fromDate = request.RequestLeave.FromDate;
+            var toDate = request.RequestLeave.ToDate;
+
+            var workslotEmployees = await _dbContext.WorkslotEmployees
+                                                    .Include(we => we.Workslot)
+                                                    .Where(we => we.EmployeeId == request.EmployeeSendRequestId && we.Workslot.DateOfSlot >= fromDate && we.Workslot.DateOfSlot <= toDate)
+                                                    .ToListAsync();
+
+            // Assuming you have a default or previous attendance status to reset to; adjust this logic as necessary
+            var defaultAttendanceStatus = await _dbContext.AttendanceStatuses.Include(ass => ass.WorkingStatus)
+                                                           .FirstOrDefaultAsync(att => att.WorkingStatus != null && att.WorkingStatus.Name == "Not Work Yet");
+
+            if (defaultAttendanceStatus == null)
+            {
+                return new { message = "Default attendance status not found." };
+            }
+
+            foreach (var workslotEmployee in workslotEmployees)
+            {
+                workslotEmployee.AttendanceStatus = defaultAttendanceStatus;
+                workslotEmployee.AttendanceStatusId = defaultAttendanceStatus.Id;
+            }
+
+            // Save the changes to the database
+            await _dbContext.SaveChangesAsync();
+
+            return new { message = "Leave request cancelled successfully." };
+        }
+
         public object GetRequestLeaveByRequestId(Guid requestId)
         {
             // Find the request by its Id
@@ -627,6 +641,53 @@ namespace DataAccess.Repository
             return result;
         }
 
+        public async Task<List<object>> GetApprovedLeaveDaysByTypeAsync(Guid employeeId)
+        {
+            var result = new List<object>();
 
+            // Fetch all approved leave requests for the given employee
+            var approvedLeaveRequests = await _dbContext.Requests
+                .Include(r => r.RequestLeave)
+                    .ThenInclude(rl => rl.LeaveType)
+                .Include(r => r.RequestLeave)
+                    .ThenInclude(rl => rl.WorkslotEmployees)
+                        .ThenInclude(we => we.Workslot)
+                .Where(r => r.EmployeeSendRequestId == employeeId && r.Status == RequestStatus.Approved && r.requestType == RequestType.Leave)
+                .ToListAsync();
+
+            // Group by leaveTypeId to process each type separately
+            var groupedByLeaveType = approvedLeaveRequests
+                .GroupBy(r => r.RequestLeave.LeaveTypeId)
+                .ToList();
+
+            foreach (var group in groupedByLeaveType)
+            {
+                var leaveTypeId = group.Key;
+                var leaveType = await _dbContext.LeaveTypes.FindAsync(leaveTypeId);
+                var leaveTypeName = leaveType?.Name ?? "Unknown Leave Type";
+
+                float totalDays = group.Sum(request =>
+                {
+                    var dateRanges = MergeToFullDay(
+                        request.RequestLeave.WorkslotEmployees
+                            .Where(we => !we.IsDeleted)
+                            .Select(we => new DateRangeDTO { title = we.Workslot.DateOfSlot.ToString("yyyy/MM/dd"), type = we.Workslot.IsMorning ? "Morning" : "Afternoon" })
+                            .ToList()
+                    );
+
+                    // Assuming 1 day for full day and 0.5 for half day, adjust your logic here
+                    return dateRanges.Sum(dateRange => dateRange.type == "Full Day" ? 1 : 0.5f);
+                });
+
+                result.Add(new
+                {
+                    leaveTypeId = leaveTypeId.ToString(),
+                    leaveTypeName = leaveTypeName,
+                    numOfDateLeave = totalDays
+                });
+            }
+
+            return result;
+        }
     }
 }

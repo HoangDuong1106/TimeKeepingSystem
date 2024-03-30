@@ -23,6 +23,6 @@ namespace BusinessObject.DTO
         public int? EmployeeStatus { get; set; }
         public string? RoleName { get; set; }
         public Guid? RoleId { get; set; }
-        public string Type { get; set; }
+        public string? EmploymentType { get; set; }
     }
 }

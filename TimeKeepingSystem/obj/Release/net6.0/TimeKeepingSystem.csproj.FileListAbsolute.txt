@@ -45,9 +45,6 @@ D:\Dan\timekeepingsystem\TimeKeepingSystem\bin\Release\net6.0\runtimes\win-arm\n
 D:\Dan\timekeepingsystem\TimeKeepingSystem\bin\Release\net6.0\runtimes\win-arm64\native\Microsoft.Data.SqlClient.SNI.dll
 D:\Dan\timekeepingsystem\TimeKeepingSystem\bin\Release\net6.0\runtimes\win-x64\native\Microsoft.Data.SqlClient.SNI.dll
 D:\Dan\timekeepingsystem\TimeKeepingSystem\bin\Release\net6.0\runtimes\win-x86\native\Microsoft.Data.SqlClient.SNI.dll
-D:\Dan\timekeepingsystem\TimeKeepingSystem\bin\Release\net6.0\runtimes\win\lib\netcoreapp3.0\Microsoft.Win32.SystemEvents.dll
-D:\Dan\timekeepingsystem\TimeKeepingSystem\bin\Release\net6.0\runtimes\unix\lib\netcoreapp3.0\System.Drawing.Common.dll
-D:\Dan\timekeepingsystem\TimeKeepingSystem\bin\Release\net6.0\runtimes\win\lib\netcoreapp3.0\System.Drawing.Common.dll
 D:\Dan\timekeepingsystem\TimeKeepingSystem\bin\Release\net6.0\runtimes\win\lib\netstandard2.0\System.Runtime.Caching.dll
 D:\Dan\timekeepingsystem\TimeKeepingSystem\bin\Release\net6.0\runtimes\win\lib\netstandard2.0\System.Security.Cryptography.ProtectedData.dll
 D:\Dan\timekeepingsystem\TimeKeepingSystem\bin\Release\net6.0\runtimes\win\lib\netcoreapp3.0\System.Windows.Extensions.dll
@@ -78,4 +75,10 @@ D:\Dan\timekeepingsystem\TimeKeepingSystem\obj\Release\net6.0\TimeKeepingSystem.
 D:\Dan\timekeepingsystem\TimeKeepingSystem\obj\Release\net6.0\ref\TimeKeepingSystem.dll
 D:\Dan\timekeepingsystem\TimeKeepingSystem\bin\Release\net6.0\EPPlus.dll
 D:\Dan\timekeepingsystem\TimeKeepingSystem\bin\Release\net6.0\Microsoft.IO.RecyclableMemoryStream.dll
-D:\Dan\timekeepingsystem\TimeKeepingSystem\bin\Release\net6.0\System.Xml.XPath.XmlDocument.dll
+D:\Dan\TimeKeepingSystem\TimeKeepingSystem\bin\Release\net6.0\EPPlus.Interfaces.dll
+D:\Dan\TimeKeepingSystem\TimeKeepingSystem\bin\Release\net6.0\EPPlus.System.Drawing.dll
+D:\Dan\TimeKeepingSystem\TimeKeepingSystem\bin\Release\net6.0\System.Security.Cryptography.Pkcs.dll
+D:\Dan\TimeKeepingSystem\TimeKeepingSystem\bin\Release\net6.0\runtimes\win\lib\net6.0\Microsoft.Win32.SystemEvents.dll
+D:\Dan\TimeKeepingSystem\TimeKeepingSystem\bin\Release\net6.0\runtimes\unix\lib\net6.0\System.Drawing.Common.dll
+D:\Dan\TimeKeepingSystem\TimeKeepingSystem\bin\Release\net6.0\runtimes\win\lib\net6.0\System.Drawing.Common.dll
+D:\Dan\TimeKeepingSystem\TimeKeepingSystem\bin\Release\net6.0\runtimes\win\lib\net6.0\System.Security.Cryptography.Pkcs.dll
