@@ -1,5 +1,6 @@
 
 using BusinessObject.DTO;
+using DataAccess.InterfaceRepository;
 using DataAccess.InterfaceService;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,11 +12,13 @@ namespace TimeKeepingSystem.Controllers
     {
         private readonly IAttendanceStatusService _service;
         private readonly IEmployeeService _employeeService;
+        private readonly IEmployeeRepository _employeeRepo;
 
-        public EmployeeController(IAttendanceStatusService service, IEmployeeService employeeService)
+        public EmployeeController(IAttendanceStatusService service, IEmployeeService employeeService, IEmployeeRepository employeeRepository)
         {
             _service = service;
             _employeeService = employeeService;
+            _employeeRepo = employeeRepository;
         }
 
         // GET: api/AttendanceStatus
@@ -94,6 +97,19 @@ namespace TimeKeepingSystem.Controllers
             {
                 return Ok(await _employeeService.EditEmployee(employeeDTO));
             } catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPatch("remote-and-demote-employee-by-id")]
+        public async Task<ActionResult<string>> ChangeEmployeeRoleAsync(Guid employeeId)
+        {
+            try
+            {
+                return Ok(await _employeeRepo.ChangeEmployeeRoleAsync(employeeId));
+            }
+            catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }

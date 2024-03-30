@@ -225,5 +225,48 @@ namespace DataAccess.Repository
                 throw new Exception(ex.Message);
             }
         }
+
+        public async Task<string> ChangeEmployeeRoleAsync(Guid employeeId)
+        {
+            // Assuming you have a way to access the DbContext
+            var employee = await _dbContext.Employees.Include(e => e.UserAccount).ThenInclude(ua => ua.Role).FirstOrDefaultAsync(e => e.Id == employeeId);
+            if (employee == null || employee.UserAccount == null)
+            {
+                return "Employee not found.";
+            }
+
+            var managerRole = await _dbContext.Roles.FirstOrDefaultAsync(r => r.Name == "Manager");
+            var employeeRole = await _dbContext.Roles.FirstOrDefaultAsync(r => r.Name == "User"); // Assuming "User" is the role for regular employees
+            if (managerRole == null || employeeRole == null)
+            {
+                return "Roles not properly defined in the system.";
+            }
+
+            // Check if the employee is currently a manager
+            if (employee.UserAccount.RoleID == managerRole.ID)
+            {
+                // Demote from Manager to Employee
+                employee.UserAccount.RoleID = employeeRole.ID;
+                employee.UserAccount.Role = employeeRole;
+            }
+            else
+            {
+                // Promote from Employee to Manager
+                var currentManager = await _dbContext.Employees.Include(e => e.UserAccount)
+                                                               .Where(e => e.DepartmentId == employee.DepartmentId && e.UserAccount.Role.Name == "Manager")
+                                                               .FirstOrDefaultAsync();
+                if (currentManager != null)
+                {
+                    currentManager.UserAccount.RoleID = employeeRole.ID;
+                    currentManager.UserAccount.Role = employeeRole;
+                }
+                employee.UserAccount.RoleID = managerRole.ID;
+                employee.UserAccount.Role = managerRole;
+            }
+
+            await _dbContext.SaveChangesAsync();
+            return $"Employee role changed successfully. {employee.FirstName} is now a {employee.UserAccount.Role.Name}.";
+        }
+
     }
 }

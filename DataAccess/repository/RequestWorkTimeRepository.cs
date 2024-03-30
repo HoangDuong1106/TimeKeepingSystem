@@ -387,7 +387,7 @@ namespace DataAccess.Repository
             return result;
         }
 
-        public List<RequestWorkTimeDTO> GetAllRequestWorkTime(string? nameSearch, int status, string? month)
+        public List<RequestWorkTimeDTO> GetAllRequestWorkTime(string? nameSearch, int? status, string? month)
         {
             var result = new List<RequestWorkTimeDTO>();
             var list = _dbContext.Requests

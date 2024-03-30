@@ -122,11 +122,24 @@ namespace TimeKeepingSystem.Controllers
         }
 
         [HttpPatch("cancel-approved-leave-request-for-hr")]
-        public async Task<ActionResult<object>> CancelApprovedLeaveRequest(Guid requestId)
+        public async Task<ActionResult<object>> CancelApprovedLeaveRequest(RequestReasonDTO request)
         {
             try
             {
-                return Ok(await _requestLeaveRepository.CancelApprovedLeaveRequest(requestId));
+                return Ok(await _requestLeaveRepository.CancelApprovedLeaveRequest(request.requestId, request.reason));
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+
+        [HttpDelete("delete-nonapproved-leave-request-for-employee")]
+        public async Task<ActionResult<object>> DeleteLeaveRequestIfNotApproved(Guid requestId)
+        {
+            try
+            {
+                return Ok(await _requestLeaveRepository.DeleteLeaveRequestIfNotApproved(requestId));
             }
             catch (Exception e)
             {

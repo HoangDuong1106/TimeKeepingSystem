@@ -38,7 +38,7 @@ namespace DataAccess.Service
             return _requestWorkTimeRepository.GetWorkslotEmployeesWithLessThanNineHours(employeeId);
         }
 
-        public List<RequestWorkTimeDTO> GetAllRequestWorkTime(string? nameSearch, int status, string? month)
+        public List<RequestWorkTimeDTO> GetAllRequestWorkTime(string? nameSearch, int? status, string? month)
         {
             return _requestWorkTimeRepository.GetAllRequestWorkTime(nameSearch, status, month);
         }

@@ -79,7 +79,8 @@ namespace DataAccess.Repository
                     FirstName = e.FirstName,
                     LastName = e.LastName,
                     RoleName = e.UserAccount != null ? e.UserAccount.Role.Name : null,
-                    RoleId = e.UserAccount != null ? e.UserAccount.RoleID : null
+                    RoleId = e.UserAccount != null ? e.UserAccount.RoleID : null,
+                    Email = e.Email
                     // ... (other fields)
                 }).ToList();
 

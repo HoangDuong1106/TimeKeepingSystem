@@ -45,7 +45,7 @@ public class MyDbContext : DbContext
         if (!optionsBuilder.IsConfigured)
         {
             //optionsBuilder.UseSqlServer("Server=DESKTOP-14337NG;Database=TimeBackup;User id=sa;Password=root;TrustServerCertificate=true;");
-            optionsBuilder.UseSqlServer("Server=tcp:time-keeping.database.windows.net,1433;Initial Catalog=TimeSystem;Persist Security Info=False;User ID=guma1234;Password=doan1234!;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;");
+            optionsBuilder.UseSqlServer("Server=tcp:time-keeping.database.windows.net,1433;Initial Catalog=TimeSystem;Persist Security Info=False;User ID=guma1234;Password=doan1234!;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=100;");
         }
     }
 

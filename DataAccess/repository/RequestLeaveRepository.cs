@@ -393,6 +393,7 @@ namespace DataAccess.Repository
                     }
                     else
                     {
+                        throw new Exception(string.Format("Workslot of dateRange title = {0}, type = {1}", dateRange.title, dateRange.type));
                     }
                 }
                 newRequest.RequestLeave.WorkslotEmployees = new List<WorkslotEmployee>();
@@ -538,7 +539,7 @@ namespace DataAccess.Repository
             return new { message = "Request approved and WorkslotEmployee updated successfully" };
         }
 
-        public async Task<object> CancelApprovedLeaveRequest(Guid requestId)
+        public async Task<object> CancelApprovedLeaveRequest(Guid requestId, string reason)
         {
             // Retrieve the request by requestId
             var request = await _dbContext.Requests
@@ -547,23 +548,28 @@ namespace DataAccess.Repository
 
             if (request == null)
             {
-                return new { message = "Request not found." };
+                throw new Exception("RequestId not found.");
             }
 
+            if (request.RequestLeave == null)
+            {
+                throw new Exception("Request Leave not found.");
+            }
             // Check if the leave date is in the past
             if (request.RequestLeave.FromDate.Date < DateTime.Today)
             {
-                return new { message = "Cannot cancel leave for past dates." };
+                throw new Exception("Cannot cancel leave for past dates.");
             }
 
             // Check if the request is indeed approved; only approved requests can be cancelled
             if (request.Status != RequestStatus.Approved)
             {
-                return new { message = "Only approved requests can be cancelled." };
+                throw new Exception("Only approved requests can be cancelled.");
             }
 
             // Set the Request status to Cancelled or Rejected based on your application logic
-            request.Status = RequestStatus.Rejected; // Assuming Cancelled is a defined status in your system
+            request.Status = RequestStatus.Cancel; // Assuming Cancelled is a defined status in your system
+            request.Reason = reason;
 
             // Find all WorkslotEmployees that were updated due to this request and reset their attendance status
             var fromDate = request.RequestLeave.FromDate;
@@ -580,7 +586,7 @@ namespace DataAccess.Repository
 
             if (defaultAttendanceStatus == null)
             {
-                return new { message = "Default attendance status not found." };
+                throw new Exception("Default attendance status not found.");
             }
 
             foreach (var workslotEmployee in workslotEmployees)
@@ -689,5 +695,37 @@ namespace DataAccess.Repository
 
             return result;
         }
+
+        public async Task<object> DeleteLeaveRequestIfNotApproved(Guid requestId)
+        {
+            // Retrieve the request by its Id
+            var request = await _dbContext.Requests
+                                           .Include(r => r.RequestLeave)
+                                           .FirstOrDefaultAsync(r => r.Id == requestId);
+
+            if (request == null)
+            {
+                throw new Exception("Leave request not found.");
+            }
+
+            // Check if the request is already approved
+            if (request.Status == RequestStatus.Approved)
+            {
+                throw new Exception("Approved leave requests cannot be deleted.");
+            }
+
+            // Mark the request and request leave as deleted
+            request.IsDeleted = true;
+            if (request.RequestLeave != null)
+            {
+                request.RequestLeave.IsDeleted = true;
+            }
+
+            // Save the changes to the database
+            await _dbContext.SaveChangesAsync();
+
+            return new { message = "Leave request Deleted successfully." };
+        }
+
     }
 }

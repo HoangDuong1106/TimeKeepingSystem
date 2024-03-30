@@ -6,11 +6,9 @@ using System.Threading.Tasks;
 
 namespace BusinessObject.DTO
 {
-    public enum RequestStatus
+    public class RequestReasonDTO
     {
-        Pending,
-        Approved,
-        Rejected,
-        Cancel
+        public Guid requestId { get; set; }
+        public string reason { get; set; }
     }
 }
