@@ -34,22 +34,7 @@ namespace DataAccess.DAO
             {
                 using (var context = new MyDbContext())
                 {
-                    return await (from holiday in context.DepartmentHolidays
-                                  join Department in context.Departments on holiday.DepartmentId equals Department.Id
-
-                                  group new { holiday, Department } by new { holiday.HolidayName, holiday.StartDate, holiday.EndDate } into holidayGroup
-                                  select new
-                                  {
-                                      HolidayName = holidayGroup.Key.HolidayName,
-                                      DepartmentIds = holidayGroup.Select(item => item.holiday.DepartmentId).ToList(),
-                                      DepartmentNames = holidayGroup.Select(item => item.Department.Name).ToList(),
-                                      StartDate = holidayGroup.Key.StartDate.ToString("yyyy/MM/dd"),
-                                      EndDate = holidayGroup.Key.EndDate.ToString("yyyy/MM/dd"),
-
-                                      Description = holidayGroup.Select(item => item.holiday.Description).FirstOrDefault(),
-                                      IsRecurring = holidayGroup.Select(item => item.holiday.IsRecurring).FirstOrDefault(),
-                                      IsDeleted = holidayGroup.Select(item => item.holiday.IsDeleted).FirstOrDefault(),
-                                  }).ToListAsync();
+                    return await context.DepartmentHolidays.ToListAsync();
                 }
 
             }

@@ -58,7 +58,6 @@ namespace TimeKeepingSystem.Controllers
                     {
                         HolidayId = Guid.NewGuid(),
                         HolidayName = acc.HolidayName,
-                        DepartmentId = departmentId,
                         Description = acc.Description,
                         IsDeleted = false,
                         IsRecurring = true,
@@ -98,8 +97,6 @@ namespace TimeKeepingSystem.Controllers
                     IsRecurring = true,
                     StartDate = acc.StartDate,
                     EndDate = acc.EndDate,
-                    DepartmentId = (Guid)acc.DepartmentId,
-
                 };
                 await repositoryAccount.UpdateHoliday(newAcc);
                 return Ok(new { StatusCode = 200, Message = "Update successful" });

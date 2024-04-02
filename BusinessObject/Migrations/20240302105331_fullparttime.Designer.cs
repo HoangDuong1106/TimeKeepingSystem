@@ -73,7 +73,7 @@ namespace BusinessObject.Migrations
                     b.ToTable("Wifis");
                 });
 
-            modelBuilder.Entity("Department", b =>
+            modelBuilder.Entity("Team", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -763,7 +763,7 @@ namespace BusinessObject.Migrations
                     b.Navigation("WorkingStatus");
                 });
 
-            modelBuilder.Entity("Department", b =>
+            modelBuilder.Entity("Team", b =>
                 {
                     b.HasOne("WorkTrackSetting", "WorkTrackSetting")
                         .WithMany()
@@ -776,13 +776,13 @@ namespace BusinessObject.Migrations
 
             modelBuilder.Entity("DepartmentHoliday", b =>
                 {
-                    b.HasOne("Department", "Department")
+                    b.HasOne("Team", "Team")
                         .WithMany()
                         .HasForeignKey("DepartmentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Department");
+                    b.Navigation("Team");
                 });
 
             modelBuilder.Entity("DepartmentHolidayException", b =>
@@ -798,12 +798,12 @@ namespace BusinessObject.Migrations
 
             modelBuilder.Entity("Employee", b =>
                 {
-                    b.HasOne("Department", "Department")
+                    b.HasOne("Team", "Team")
                         .WithMany("Employees")
                         .HasForeignKey("DepartmentId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("Department");
+                    b.Navigation("Team");
                 });
 
             modelBuilder.Entity("Request", b =>
@@ -911,11 +911,11 @@ namespace BusinessObject.Migrations
 
             modelBuilder.Entity("Workslot", b =>
                 {
-                    b.HasOne("Department", "Department")
+                    b.HasOne("Team", "Team")
                         .WithMany()
                         .HasForeignKey("DepartmentId");
 
-                    b.Navigation("Department");
+                    b.Navigation("Team");
                 });
 
             modelBuilder.Entity("WorkslotEmployee", b =>
@@ -976,7 +976,7 @@ namespace BusinessObject.Migrations
                     b.Navigation("WorkTimeSetting");
                 });
 
-            modelBuilder.Entity("Department", b =>
+            modelBuilder.Entity("Team", b =>
                 {
                     b.Navigation("Employees");
                 });
