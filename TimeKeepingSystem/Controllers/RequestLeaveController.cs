@@ -37,7 +37,7 @@ namespace TimeKeepingSystem.Controllers
         }
 
         [HttpGet("get-work-date-setting-of-employee")]
-        public async Task<ActionResult<WorkDateSettingDTO>> GetWorkDateSettingFromEmployeeId(Guid employeeId)
+        public async Task<ActionResult<WorkDateSettingDTO>> GetWorkDateSettingFromEmployeeId(Guid employeeId)   
         {
             try
             {
@@ -85,11 +85,11 @@ namespace TimeKeepingSystem.Controllers
         }
 
         [HttpPatch("approve-leave-request")]
-        public async Task<IActionResult> ApproveRequestAndChangeWorkslotEmployee(Guid requestId)
+        public async Task<IActionResult> ApproveRequestAndChangeWorkslotEmployee(Guid requestId, Guid employeeIdDecider)
         {
             try
             {
-                return Ok(await _requestLeaveService.ApproveRequestAndChangeWorkslotEmployee(requestId));
+                return Ok(await _requestLeaveService.ApproveRequestAndChangeWorkslotEmployee(requestId, employeeIdDecider));
             } catch (Exception e)
             {
                 return BadRequest(e.Message);
@@ -126,7 +126,7 @@ namespace TimeKeepingSystem.Controllers
         {
             try
             {
-                return Ok(await _requestLeaveRepository.CancelApprovedLeaveRequest(request.requestId, request.reason));
+                return Ok(await _requestLeaveRepository.CancelApprovedLeaveRequest(request));
             }
             catch (Exception e)
             {

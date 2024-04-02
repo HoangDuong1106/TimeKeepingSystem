@@ -499,7 +499,7 @@ namespace DataAccess.Repository
             return mergedDateRanges;
         }
 
-        public async Task<object> ApproveRequestAndChangeWorkslotEmployee(Guid requestId)
+        public async Task<object> ApproveRequestAndChangeWorkslotEmployee(Guid requestId, Guid employeeIdDecider)
         {
             // Step 1: Retrieve the Request by requestId
             var request = await _dbContext.Requests
@@ -513,6 +513,7 @@ namespace DataAccess.Repository
 
             // Update the Request status to Approve
             request.Status = RequestStatus.Approved;
+            request.EmployeeIdLastDecider = employeeIdDecider;
 
             // Step 2: Find all WorkslotEmployees that should be updated
             var fromDate = request.RequestLeave.FromDate;
@@ -546,8 +547,11 @@ namespace DataAccess.Repository
             return new { message = "Request approved and WorkslotEmployee updated successfully" };
         }
 
-        public async Task<object> CancelApprovedLeaveRequest(Guid requestId, string reason)
+        public async Task<object> CancelApprovedLeaveRequest(RequestReasonDTO requestObj)
         {
+            Guid requestId = requestObj.requestId;
+            string reason = requestObj.reason;
+
             // Retrieve the request by requestId
             var request = await _dbContext.Requests
                                            .Include(r => r.RequestLeave)
@@ -577,6 +581,7 @@ namespace DataAccess.Repository
             // Set the Request status to Cancelled or Rejected based on your application logic
             request.Status = RequestStatus.Cancel; // Assuming Cancelled is a defined status in your system
             request.Reason = reason;
+            request.EmployeeIdLastDecider = requestObj.employeeIdDecider;
 
             // Find all WorkslotEmployees that were updated due to this request and reset their attendance status
             var fromDate = request.RequestLeave.FromDate;

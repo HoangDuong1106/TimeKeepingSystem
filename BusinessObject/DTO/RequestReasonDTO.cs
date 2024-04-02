@@ -10,5 +10,6 @@ namespace BusinessObject.DTO
     {
         public Guid requestId { get; set; }
         public string reason { get; set; }
+        public Guid? employeeIdDecider { get; set; }
     }
 }

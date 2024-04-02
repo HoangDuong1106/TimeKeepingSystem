@@ -5,7 +5,7 @@ namespace DataAccess.InterfaceService
 {
     public interface IRequestLeaveService
     {
-        Task<object> ApproveRequestAndChangeWorkslotEmployee(Guid requestId);
+        Task<object> ApproveRequestAndChangeWorkslotEmployee(Guid requestId, Guid employeeIdDecider);
         Task<object> CreateRequestLeave(LeaveRequestDTO dto, Guid employeeId);
         Task<bool> EditRequestLeave(LeaveRequestDTO dto, Guid employeeId);
         object GetRequestLeaveAllEmployee(string? nameSearch, int status);

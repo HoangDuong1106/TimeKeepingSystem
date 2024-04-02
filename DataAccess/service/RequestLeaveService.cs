@@ -48,9 +48,9 @@ namespace DataAccess.Service
             return _requestLeaveRepository.GetRequestLeaveAllEmployee(nameSearch, status);
         }
 
-        public async Task<object> ApproveRequestAndChangeWorkslotEmployee(Guid requestId)
+        public async Task<object> ApproveRequestAndChangeWorkslotEmployee(Guid requestId, Guid employeeIdDecider)
         {
-            return await _requestLeaveRepository.ApproveRequestAndChangeWorkslotEmployee(requestId);
+            return await _requestLeaveRepository.ApproveRequestAndChangeWorkslotEmployee(requestId, employeeIdDecider);
         }
 
         public object GetRequestLeaveByRequestId(Guid requestId)

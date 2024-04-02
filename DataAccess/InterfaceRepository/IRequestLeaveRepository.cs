@@ -2,8 +2,8 @@ using BusinessObject.DTO;
 
 namespace DataAccess.InterfaceRepository { public interface IRequestLeaveRepository { 
         Task<bool> AddAsync(RequestLeaveDTO a);
-        Task<object> ApproveRequestAndChangeWorkslotEmployee(Guid requestId);
-        Task<object> CancelApprovedLeaveRequest(Guid requestId, string reason);
+        Task<object> ApproveRequestAndChangeWorkslotEmployee(Guid requestId, Guid employeeIdDecider);
+        Task<object> CancelApprovedLeaveRequest(RequestReasonDTO request);
         Task<object> CreateRequestLeave(LeaveRequestDTO dto, Guid employeeId);
         Task<object> DeleteLeaveRequestIfNotApproved(Guid requestId);
         Task<bool> EditRequestLeave(LeaveRequestDTO dto, Guid employeeId);
