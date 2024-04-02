@@ -13,4 +13,5 @@ namespace DataAccess.InterfaceRepository { public interface IRequestLeaveReposit
         object GetRequestLeaveByRequestId(Guid requestId);
         object GetRequestLeaveOfEmployeeById(Guid employeeId);
         Task<WorkDateSettingDTO> GetWorkDateSettingFromEmployeeId(Guid employeeId);
+        Task<bool> SendLeaveRequestStatusToFirebase(Guid requestId);
         Task<bool> SoftDeleteAsync(Guid id); } }

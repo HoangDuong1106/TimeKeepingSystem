@@ -2,6 +2,8 @@
 using DataAccess.InterfaceRepository;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
+using System.Text.Json;
+using System.Text;
 
 namespace DataAccess.Repository
 {
@@ -105,7 +107,7 @@ namespace DataAccess.Repository
                 IsDeleted = false,
                 RequestOverTimeId = newRequestOverTime.Id,
                 RequestOverTime = newRequestOverTime,
-                Message = "",
+                MessageFromDecider = "",
                 PathAttachmentFile = dto.linkFile ?? "",
                 Reason = dto.reason ?? "",
                 SubmitedDate = DateTime.Now,
@@ -258,6 +260,37 @@ namespace DataAccess.Repository
             }
 
             return result;
+        }
+
+        public async Task<bool> SendOverTimeRequestStatusToFirebase(Guid requestId)
+        {
+            var request = await _dbContext.Requests
+                .Include(r => r.RequestOverTime)
+                .FirstOrDefaultAsync(r => r.Id == requestId);
+
+            if (request == null)
+            {
+                return false; // Request not found
+            }
+
+            var firebaseData = new
+            {
+                requestId = request.Id,
+                employeeId = request.EmployeeSendRequestId,
+                overTimeId = request.RequestOverTimeId,
+                status = request.Status.ToString(),
+                reason = request.Reason,
+                fromHour = request.RequestOverTime.FromHour,
+                toHour = request.RequestOverTime.ToHour,
+                dateOfOverTime = request.RequestOverTime.DateOfOverTime
+            };
+
+            var json = JsonSerializer.Serialize(firebaseData);
+            var httpClient = new HttpClient();
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            var result = await httpClient.PostAsync("https://nextjs-course-f2de1-default-rtdb.firebaseio.com/overTimeRequests.json", content);
+
+            return result.IsSuccessStatusCode;
         }
 
     }

@@ -146,6 +146,20 @@ namespace TimeKeepingSystem.Controllers
                 return BadRequest(e.Message);
             }
         }
+
+        [HttpGet("send-firebase-request-data-status")]
+        public async Task<ActionResult<object>> SendLeaveRequestStatusToFirebase(Guid requestId)
+        {
+            try
+            {
+                return Ok(await _requestLeaveRepository.SendLeaveRequestStatusToFirebase(requestId));
+
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }
 

@@ -24,7 +24,8 @@ public class Request
     public Employee EmployeeSendRequest { get; set; }
 
     [StringLength(1000)]
-    public string Message { get; set; }
+    public string MessageFromDecider { get; set; }
+
     [StringLength(1000)]
     public string PathAttachmentFile { get; set; }
 

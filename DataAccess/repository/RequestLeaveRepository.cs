@@ -6,6 +6,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
 
 namespace DataAccess.Repository
@@ -90,7 +91,7 @@ namespace DataAccess.Repository
                     status = (int)r.Status,
                     statusName = r.Status.ToString(),
                     reason = r.Reason,
-                    reasonReject = r.Message,
+                    reasonReject = r.MessageFromDecider,
                     linkFile = r.PathAttachmentFile,
                     dateRange = dateRange,
                 });
@@ -202,7 +203,7 @@ namespace DataAccess.Repository
 
             if (dto.reasonReject != null)
             {
-                existingRequest.Message = dto.reasonReject;
+                existingRequest.MessageFromDecider = dto.reasonReject;
             }
 
             if (dto.linkFile != null)
@@ -369,7 +370,7 @@ namespace DataAccess.Repository
                 IsDeleted = false,
                 RequestLeaveId = newRequestLeave.Id,
                 RequestLeave = newRequestLeave,
-                Message = "",
+                MessageFromDecider = "",
                 PathAttachmentFile = dto.linkFile ?? "",
                 Reason = dto.reason ?? "",
                 SubmitedDate = DateTime.Now,
@@ -732,6 +733,40 @@ namespace DataAccess.Repository
 
             return new { message = "Leave request Deleted successfully." };
         }
+
+        public async Task<bool> SendLeaveRequestStatusToFirebase(Guid requestId)
+        {
+            var request = await _dbContext.Requests
+                .Include(r => r.RequestLeave)
+                .FirstOrDefaultAsync(r => r.Id == requestId);
+
+            if (request == null)
+            {
+                return false; // Request not found
+            }
+
+            var firebaseData = new
+            {
+                requestId = request.Id,
+                employeeId = request.EmployeeSendRequestId,
+                accountIdSendRequest = request.EmployeeSendRequest.UserID,
+                //accountIdLastDecidedRequest = request.
+                leaveTypeId = request.RequestLeave.LeaveTypeId,
+                status = request.Status.ToString(),
+                reason = request.Reason,
+                submitedDate = request.SubmitedDate,
+                fromDate = request.RequestLeave.FromDate,
+                toDate = request.RequestLeave.ToDate
+            };
+
+            var json = JsonSerializer.Serialize(firebaseData);
+            var httpClient = new HttpClient();
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            var result = await httpClient.PostAsync("https://nextjs-course-f2de1-default-rtdb.firebaseio.com/leaveRequests.json", content);
+
+            return result.IsSuccessStatusCode;
+        }
+
 
     }
 }
