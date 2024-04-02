@@ -209,7 +209,7 @@ namespace DataAccess.Repository
             {
                 existingRequest.PathAttachmentFile = dto.linkFile;
             }
-            //var employee = _dbContext.Employees.Include(e => e.Department).ThenInclude(d => d.WorkTrackSetting).ThenInclude(wts => wts.WorkDateSetting).Where(e => e.Id == employeeId).FirstOrDefault();
+            //var employee = _dbContext.Employees.Include(e => e.Team).ThenInclude(d => d.WorkTrackSetting).ThenInclude(wts => wts.WorkDateSetting).Where(e => e.Id == employeeId).FirstOrDefault();
             // Update the WorkslotEmployees if needed. This assumes that the WorkslotEmployees are uniquely identified by their 'title' (date) and 'type' (morning/afternoon)
             List<WorkslotEmployee> newItems = new List<WorkslotEmployee>();
 
@@ -239,7 +239,7 @@ namespace DataAccess.Repository
             //        else
             //        {
             //            var workSlot = _dbContext.Workslots.FirstOrDefault(we => we.DateOfSlot.Date == DateTime.ParseExact(dateRange.title, "yyyy/MM/dd", CultureInfo.InvariantCulture).Date && (we.IsMorning ? "Morning" : "Afternoon") == dateRange.type);
-            //            var worktrackSetting = employee.Department.WorkTrackSetting;
+            //            var worktrackSetting = employee.Team.WorkTrackSetting;
             //            if (workSlot == null)
             //            {
             //                workSlot = new Workslot()

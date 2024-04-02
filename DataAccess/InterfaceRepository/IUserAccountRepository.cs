@@ -22,8 +22,8 @@ namespace DataAccess.InterfaceRepository
         Task<object> GetDepartments();
 
         Task DeleteDepartment(Guid m);
-        Task UpdateDepartment(Department m);
-        Task AddDepartment(Department m);
+        Task UpdateDepartment(Team m);
+        Task AddDepartment(Team m);
 
 
         Task<object> GetHolidays();

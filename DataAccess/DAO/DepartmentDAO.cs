@@ -53,7 +53,7 @@ namespace DataAccess.DAO
 
 
 
-        public static async Task AddDepartment(Department m)
+        public static async Task AddDepartment(Team m)
         {
             try
             {
@@ -85,7 +85,7 @@ namespace DataAccess.DAO
             }
         }
 
-        public static async Task UpdateDepartment(Department m)
+        public static async Task UpdateDepartment(Team m)
         {
             try
             {

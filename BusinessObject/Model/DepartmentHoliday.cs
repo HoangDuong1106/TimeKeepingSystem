@@ -7,10 +7,6 @@ public class DepartmentHoliday
     [Key]
     public Guid HolidayId { get; set; }
 
-    [ForeignKey("Department")]
-    public Guid DepartmentId { get; set; }
-    public Department Department { get; set; }
-
     [Required]
     public DateTime StartDate { get; set; }
 

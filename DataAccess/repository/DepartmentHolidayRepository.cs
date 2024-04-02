@@ -20,7 +20,6 @@ namespace DataAccess.Repository
             return await ass.Select(a => new DepartmentHolidayDTO
             {
                 HolidayId = a.HolidayId,
-                DepartmentId = a.DepartmentId,
                 HolidayName = a.HolidayName,
                 StartDate = a.StartDate,
                 EndDate = a.EndDate,
@@ -37,7 +36,6 @@ namespace DataAccess.Repository
                 await base.AddAsync(new DepartmentHoliday() // have dbSaveChange inside method
                 {
                     HolidayId = (Guid)a.HolidayId,
-                    DepartmentId = (Guid)a.DepartmentId,
                     HolidayName = a.HolidayName,
                     StartDate = a.StartDate,
                     EndDate = a.EndDate,

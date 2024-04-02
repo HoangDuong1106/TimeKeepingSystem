@@ -5,11 +5,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DataAccess.Repository
 {
-    public class DepartmentRepository : Repository<Department>, IDepartmentRepository
+    public class TeamRepository : Repository<Team>, IDepartmentRepository
     {
         private readonly MyDbContext _dbContext;
 
-        public DepartmentRepository(MyDbContext context) : base(context)
+        public TeamRepository(MyDbContext context) : base(context)
         {
             // You can add more specific methods here if needed
             _dbContext = context;
@@ -31,7 +31,7 @@ namespace DataAccess.Repository
         {
             try
             {
-                await base.AddAsync(new Department() // have dbSaveChange inside method
+                await base.AddAsync(new Team() // have dbSaveChange inside method
                 {
                     Id = (Guid)a.Id,
                     //ManagerId = Guid.Parse("57076183-1d8d-43b1-a6ff-17cd4f4b71e1"),
@@ -116,7 +116,7 @@ namespace DataAccess.Repository
                     .Select(e => e.DepartmentId)
                     .FirstOrDefaultAsync();
 
-                if (departmentId == null) throw new Exception("Department not found for given employee.");
+                if (departmentId == null) throw new Exception("Team not found for given employee.");
 
                 // Fetch all employees in the department
                 var employees = await _dbContext.Employees.Include(a => a.UserAccount).ThenInclude(ua => ua.Role)
@@ -158,7 +158,7 @@ namespace DataAccess.Repository
         }
 
 
-        public async Task<Department> GetDepartmentAsync(Guid departmentId)
+        public async Task<Team> GetDepartmentAsync(Guid departmentId)
         {
             return _dbContext.Departments.FirstOrDefault(d => d.Id == departmentId);
         }

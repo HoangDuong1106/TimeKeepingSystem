@@ -8,11 +8,11 @@ using DataAccess.Service;  // Assuming the service interfaces are in this namesp
 
 namespace DataAccess.Service
 {
-    public class DepartmentService : IDepartmentService
+    public class TeamService : IDepartmentService
     {
         private readonly IDepartmentRepository _DepartmentRepository;
 
-        public DepartmentService(IDepartmentRepository DepartmentRepository)
+        public TeamService(IDepartmentRepository DepartmentRepository)
         {
             _DepartmentRepository = DepartmentRepository;
         }
@@ -28,7 +28,7 @@ namespace DataAccess.Service
             return await _DepartmentRepository.GetEmployeesByDepartmentIdAsync(departmentId);
         }
 
-        public async Task<Department> GetDepartmentAsync(Guid departmentId)
+        public async Task<Team> GetDepartmentAsync(Guid departmentId)
         {
             return await _DepartmentRepository.GetDepartmentAsync(departmentId);
         }

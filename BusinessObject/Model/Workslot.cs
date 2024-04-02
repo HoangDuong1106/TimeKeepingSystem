@@ -12,9 +12,9 @@ public class Workslot
     public string? FromHour { get; set; }
     public string? ToHour { get; set; }
 
-    [ForeignKey("Department")]
+    [ForeignKey("Team")]
     [AllowNull]
     public Guid? DepartmentId { get; set; }
-    public Department? Department { get; set; }
+    public Team? Department { get; set; }
     public bool IsDeleted { get; set; } = false;  // Soft delete flag
 }

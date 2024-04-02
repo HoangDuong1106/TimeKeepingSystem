@@ -127,7 +127,7 @@ namespace TimeKeepingSystem.Controllers
 
                 await repositoryAccount.AddWorkTrackSetting(newWorkSetting);
                 Guid id = Guid.NewGuid();
-                var newAcc = new Department
+                var newAcc = new Team
                 {
                     Id = id,
                     //ManagerId = Guid.Parse("57076183-1d8d-43b1-a6ff-17cd4f4b71e1"),
@@ -156,7 +156,7 @@ namespace TimeKeepingSystem.Controllers
             try
             {
                 Guid id = Guid.NewGuid();
-                var newAcc = new Department
+                var newAcc = new Team
                 {
                     Id = (Guid)acc.Id,
                     //ManagerId = Guid.Parse("57076183-1d8d-43b1-a6ff-17cd4f4b71e1"),

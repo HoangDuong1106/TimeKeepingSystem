@@ -19,7 +19,7 @@ public class MyDbContext : DbContext
     public DbSet<DepartmentHoliday> DepartmentHolidays { get; set; }
     public DbSet<DepartmentHolidayException> DepartmentHolidayExceptions { get; set; }
     public DbSet<AttendanceStatus> AttendanceStatuses { get; set; }
-    public DbSet<Department> Departments { get; set; }
+    public DbSet<Team> Departments { get; set; }
     public DbSet<Employee> Employees { get; set; }
     public DbSet<LeaveType> LeaveTypes { get; set; }
     public DbSet<Request> Requests { get; set; }
@@ -99,9 +99,9 @@ public class MyDbContext : DbContext
         //    .HasForeignKey(e => e.ManagerId)
         //    .OnDelete(DeleteBehavior.Restrict);
 
-        // Configure Department to Employee relationship
-        modelBuilder.Entity<Department>()
-            .HasMany(d => d.Employees)  // Assuming Department has a collection property named Employees
+        // Configure Team to Employee relationship
+        modelBuilder.Entity<Team>()
+            .HasMany(d => d.Employees)  // Assuming Team has a collection property named Employees
             .WithOne(e => e.Department)
             .HasForeignKey(e => e.DepartmentId)
             .OnDelete(DeleteBehavior.Restrict);
@@ -119,7 +119,7 @@ public class MyDbContext : DbContext
             .HasDefaultValue("FullTime");
 
         modelBuilder.Entity<AttendanceStatus>().HasQueryFilter(e => !e.IsDeleted);
-        modelBuilder.Entity<Department>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<Team>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<DepartmentHoliday>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<DepartmentHolidayException>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<Employee>().HasQueryFilter(e => !e.IsDeleted);

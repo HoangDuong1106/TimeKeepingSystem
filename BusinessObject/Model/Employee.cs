@@ -41,10 +41,10 @@ public class Employee
     [Required]
     public EmployeeStatus EmployeeStatus { get; set; }
 
-    [ForeignKey("Department")]
+    [ForeignKey("Team")]
     [AllowNull]
     public Guid? DepartmentId { get; set; }
-    public Department? Department { get; set; }
+    public Team? Department { get; set; }
 
     // Existing properties remain unchanged
     [ForeignKey("UserAccount")]

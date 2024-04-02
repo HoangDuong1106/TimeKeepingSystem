@@ -22,8 +22,8 @@ namespace DataAccess.Repository
 
         public Task<object> GetDepartments() => DepartmentDAO.GetDepartments();
         public Task DeleteDepartment(Guid m) => DepartmentDAO.DeleteDepartment(m);
-        public Task AddDepartment(Department m) => DepartmentDAO.AddDepartment(m);
-        public Task UpdateDepartment(Department m) => DepartmentDAO.UpdateDepartment(m);
+        public Task AddDepartment(Team m) => DepartmentDAO.AddDepartment(m);
+        public Task UpdateDepartment(Team m) => DepartmentDAO.UpdateDepartment(m);
 
 
         public Task<object> GetHolidays() => HolidayDAO.GetHolidays();

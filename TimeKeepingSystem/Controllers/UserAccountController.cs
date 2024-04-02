@@ -322,7 +322,7 @@ namespace TimeKeepingSystem.Controllers
                         UserID = userId,
                         EmployeeStatus = EmployeeStatus.Working,
                         DepartmentId = DepartmentId,
-                        //Department = await _departmentService.GetDepartmentAsync(DepartmentId)
+                        //Team = await _departmentService.GetDepartmentAsync(DepartmentId)
                     };
                     await repositoryAccount.AddEmployee(newEmployee);
 

@@ -78,7 +78,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
 builder.Services.AddSwaggerGen();
 // Register repository classes
 builder.Services.AddScoped<IRepository<AttendanceStatus>, AttendanceStatusRepository>();
-builder.Services.AddScoped<IRepository<Department>, DepartmentRepository>();
+builder.Services.AddScoped<IRepository<Team>, TeamRepository>();
 builder.Services.AddScoped<IRepository<DepartmentHoliday>, DepartmentHolidayRepository>();
 builder.Services.AddScoped<IRepository<DepartmentHolidayException>, DepartmentHolidayExceptionRepository>();
 builder.Services.AddScoped<IRepository<Employee>, EmployeeRepository>();
@@ -102,7 +102,7 @@ builder.Services.AddScoped<IRepository<Wifi>, WifiRepository>();
 builder.Services.AddScoped<IAttendanceStatusRepository, AttendanceStatusRepository>();
 builder.Services.AddScoped<IDepartmentHolidayExceptionRepository, DepartmentHolidayExceptionRepository>();
 builder.Services.AddScoped<IDepartmentHolidayRepository, DepartmentHolidayRepository>();
-builder.Services.AddScoped<IDepartmentRepository, DepartmentRepository>();
+builder.Services.AddScoped<IDepartmentRepository, TeamRepository>();
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 builder.Services.AddScoped<ILeaveSettingRepository, LeaveSettingRepository>();
 builder.Services.AddScoped<ILeaveTypeRepository, LeaveTypeRepository>();
@@ -127,7 +127,7 @@ builder.Services.AddScoped<IWifiRepository, WifiRepository>();
 builder.Services.AddScoped<IAttendanceStatusService, AttendanceStatusService>();
 builder.Services.AddScoped<IDepartmentHolidayExceptionService, DepartmentHolidayExceptionService>();
 builder.Services.AddScoped<IDepartmentHolidayService, DepartmentHolidayService>();
-builder.Services.AddScoped<IDepartmentService, DepartmentService>();
+builder.Services.AddScoped<IDepartmentService, TeamService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<ILeaveSettingService, LeaveSettingService>();
 builder.Services.AddScoped<ILeaveTypeService, LeaveTypeService>();

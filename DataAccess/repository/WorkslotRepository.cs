@@ -37,7 +37,7 @@ namespace DataAccess.Repository
             var department = _dbContext.Departments.Include(d => d.WorkTrackSetting).ThenInclude(wts => wts.WorkDateSetting).Include(d => d.WorkTrackSetting).ThenInclude(wts => wts.WorkTimeSetting).FirstOrDefault(d => d.Id == request.departmentId);
             if (department == null)
             {
-                throw new Exception("Department not existing");
+                throw new Exception("Team not existing");
             }
 
             var workTrackSetting = department.WorkTrackSetting;
@@ -112,7 +112,7 @@ namespace DataAccess.Repository
 
             if (department == null)
             {
-                throw new Exception("Department not existing");
+                throw new Exception("Team not existing");
             }
 
             var workTrackSetting = department.WorkTrackSetting;

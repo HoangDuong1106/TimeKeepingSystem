@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics.CodeAnalysis;
 
-public class Department
+public class Team
 {
     [Key]
     public Guid Id { get; set; }
