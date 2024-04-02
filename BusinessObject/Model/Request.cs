@@ -23,6 +23,8 @@ public class Request
     public Guid EmployeeSendRequestId { get; set; }
     public Employee EmployeeSendRequest { get; set; }
 
+    public Guid? EmployeeIdLastDecider { get; set; }
+
     [StringLength(1000)]
     public string MessageFromDecider { get; set; }
 
