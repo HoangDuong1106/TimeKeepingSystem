@@ -290,7 +290,7 @@ namespace BusinessObject.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<string>("MessageFromDecider")
+                    b.Property<string>("Message")
                         .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");

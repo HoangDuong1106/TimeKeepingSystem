@@ -107,7 +107,7 @@ namespace DataAccess.Repository
                 IsDeleted = false,
                 RequestOverTimeId = newRequestOverTime.Id,
                 RequestOverTime = newRequestOverTime,
-                MessageFromDecider = "",
+                Message = "",
                 PathAttachmentFile = dto.linkFile ?? "",
                 Reason = dto.reason ?? "",
                 SubmitedDate = DateTime.Now,

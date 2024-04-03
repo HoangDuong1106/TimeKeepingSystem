@@ -26,7 +26,7 @@ public class Request
     public Guid? EmployeeIdLastDecider { get; set; }
 
     [StringLength(1000)]
-    public string MessageFromDecider { get; set; }
+    public string Message { get; set; }
 
     [StringLength(1000)]
     public string PathAttachmentFile { get; set; }

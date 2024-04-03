@@ -34,7 +34,7 @@ namespace DataAccess.Repository
             DateTime now = DateTime.Now;
             var employeeOvertimeRequests = _dbContext.Requests
                 .Include(r => r.RequestOverTime).ThenInclude(rot => rot.WorkingStatus)
-                .Where(r => !r.IsDeleted && r.EmployeeSendRequestId == employeeId && r.requestType == RequestType.OverTime && r.Status == RequestStatus.Approved)
+                .Where(r => !r.IsDeleted && r.EmployeeSendRequestId == employeeId && r.requestType == RequestType.OverTime)
                 .ToList(); // ToList to materialize the query if necessary for complex calculations
 
             var timeInYear = employeeOvertimeRequests

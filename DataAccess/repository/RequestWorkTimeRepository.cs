@@ -97,7 +97,7 @@ namespace DataAccess.Repository
                 IsDeleted = false,
                 RequestWorkTimeId = newRequestWorkTime.Id,
                 RequestWorkTime = newRequestWorkTime,
-                MessageFromDecider = "",
+                Message = "",
                 PathAttachmentFile = dto.linkFile ?? "",
                 Reason = dto.reason ?? "",
                 SubmitedDate = DateTime.Now,

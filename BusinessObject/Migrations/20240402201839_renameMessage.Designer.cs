@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BusinessObject.Migrations
 {
     [DbContext(typeof(MyDbContext))]
-    [Migration("20230927160209_Initial4")]
-    partial class Initial4
+    [Migration("20240402201839_renameMessage")]
+    partial class renameMessage
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -73,39 +73,10 @@ namespace BusinessObject.Migrations
                     b.ToTable("Wifis");
                 });
 
-            modelBuilder.Entity("Team", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<Guid?>("ManagerId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid>("WorkTrackId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("WorkTrackId");
-
-                    b.ToTable("Departments");
-                });
-
             modelBuilder.Entity("DepartmentHoliday", b =>
                 {
                     b.Property<Guid>("HolidayId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("DepartmentId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Description")
@@ -131,8 +102,6 @@ namespace BusinessObject.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("HolidayId");
-
-                    b.HasIndex("DepartmentId");
 
                     b.ToTable("DepartmentHolidays");
                 });
@@ -183,6 +152,13 @@ namespace BusinessObject.Migrations
 
                     b.Property<int>("EmployeeStatus")
                         .HasColumnType("int");
+
+                    b.Property<string>("EmploymentType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("FullTime");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
@@ -275,6 +251,9 @@ namespace BusinessObject.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("EmployeeIdLastDecider")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("EmployeeSendRequestId")
@@ -503,6 +482,32 @@ namespace BusinessObject.Migrations
                     b.HasKey("ID");
 
                     b.ToTable("Roles");
+                });
+
+            modelBuilder.Entity("Team", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("ManagerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("WorkTrackId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorkTrackId");
+
+                    b.ToTable("Departments");
                 });
 
             modelBuilder.Entity("UserAccount", b =>
@@ -756,28 +761,6 @@ namespace BusinessObject.Migrations
                     b.Navigation("WorkingStatus");
                 });
 
-            modelBuilder.Entity("Team", b =>
-                {
-                    b.HasOne("WorkTrackSetting", "WorkTrackSetting")
-                        .WithMany()
-                        .HasForeignKey("WorkTrackId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("WorkTrackSetting");
-                });
-
-            modelBuilder.Entity("DepartmentHoliday", b =>
-                {
-                    b.HasOne("Team", "Team")
-                        .WithMany()
-                        .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Team");
-                });
-
             modelBuilder.Entity("DepartmentHolidayException", b =>
                 {
                     b.HasOne("DepartmentHoliday", "DepartmentHoliday")
@@ -791,12 +774,12 @@ namespace BusinessObject.Migrations
 
             modelBuilder.Entity("Employee", b =>
                 {
-                    b.HasOne("Team", "Team")
+                    b.HasOne("Team", "Department")
                         .WithMany("Employees")
                         .HasForeignKey("DepartmentId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("Team");
+                    b.Navigation("Department");
                 });
 
             modelBuilder.Entity("Request", b =>
@@ -883,6 +866,17 @@ namespace BusinessObject.Migrations
                     b.Navigation("RiskPerformanceSetting");
                 });
 
+            modelBuilder.Entity("Team", b =>
+                {
+                    b.HasOne("WorkTrackSetting", "WorkTrackSetting")
+                        .WithMany()
+                        .HasForeignKey("WorkTrackId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("WorkTrackSetting");
+                });
+
             modelBuilder.Entity("UserAccount", b =>
                 {
                     b.HasOne("Employee", "Employee")
@@ -904,11 +898,11 @@ namespace BusinessObject.Migrations
 
             modelBuilder.Entity("Workslot", b =>
                 {
-                    b.HasOne("Team", "Team")
+                    b.HasOne("Team", "Department")
                         .WithMany()
                         .HasForeignKey("DepartmentId");
 
-                    b.Navigation("Team");
+                    b.Navigation("Department");
                 });
 
             modelBuilder.Entity("WorkslotEmployee", b =>
@@ -969,11 +963,6 @@ namespace BusinessObject.Migrations
                     b.Navigation("WorkTimeSetting");
                 });
 
-            modelBuilder.Entity("Team", b =>
-                {
-                    b.Navigation("Employees");
-                });
-
             modelBuilder.Entity("Employee", b =>
                 {
                     b.Navigation("UserAccount")
@@ -988,6 +977,11 @@ namespace BusinessObject.Migrations
             modelBuilder.Entity("Role", b =>
                 {
                     b.Navigation("UserRoles");
+                });
+
+            modelBuilder.Entity("Team", b =>
+                {
+                    b.Navigation("Employees");
                 });
 #pragma warning restore 612, 618
         }

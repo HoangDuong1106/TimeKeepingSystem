@@ -85,7 +85,7 @@ namespace TimeKeepingSystem.Controllers
         }
 
         [HttpPatch("approve-leave-request")]
-        public async Task<IActionResult> ApproveRequestAndChangeWorkslotEmployee(Guid requestId, Guid employeeIdDecider)
+        public async Task<IActionResult> ApproveRequestAndChangeWorkslotEmployee(Guid requestId, Guid? employeeIdDecider)
         {
             try
             {
@@ -135,11 +135,11 @@ namespace TimeKeepingSystem.Controllers
         }
 
         [HttpDelete("delete-nonapproved-leave-request-for-employee")]
-        public async Task<ActionResult<object>> DeleteLeaveRequestIfNotApproved(Guid requestId)
+        public async Task<ActionResult<object>> DeleteLeaveRequestIfNotApproved(Guid requestId, Guid? employeeIdDecider)
         {
             try
             {
-                return Ok(await _requestLeaveRepository.DeleteLeaveRequestIfNotApproved(requestId));
+                return Ok(await _requestLeaveRepository.DeleteLeaveRequestIfNotApproved(requestId, employeeIdDecider));
             }
             catch (Exception e)
             {
@@ -152,7 +152,7 @@ namespace TimeKeepingSystem.Controllers
         {
             try
             {
-                return Ok(await _requestLeaveRepository.SendLeaveRequestStatusToFirebase(requestId));
+                return Ok(await _requestLeaveRepository.SendLeaveRequestStatusToFirebase(requestId, ""));
 
             }
             catch (Exception ex)

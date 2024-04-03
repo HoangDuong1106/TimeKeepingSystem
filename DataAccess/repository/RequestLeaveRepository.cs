@@ -91,7 +91,7 @@ namespace DataAccess.Repository
                     status = (int)r.Status,
                     statusName = r.Status.ToString(),
                     reason = r.Reason,
-                    reasonReject = r.MessageFromDecider,
+                    reasonReject = r.Message,
                     linkFile = r.PathAttachmentFile,
                     dateRange = dateRange,
                 });
@@ -203,7 +203,7 @@ namespace DataAccess.Repository
 
             if (dto.reasonReject != null)
             {
-                existingRequest.MessageFromDecider = dto.reasonReject;
+                existingRequest.Message = dto.reasonReject;
             }
 
             if (dto.linkFile != null)
@@ -370,7 +370,7 @@ namespace DataAccess.Repository
                 IsDeleted = false,
                 RequestLeaveId = newRequestLeave.Id,
                 RequestLeave = newRequestLeave,
-                MessageFromDecider = "",
+                Message = "",
                 PathAttachmentFile = dto.linkFile ?? "",
                 Reason = dto.reason ?? "",
                 SubmitedDate = DateTime.Now,
@@ -414,6 +414,7 @@ namespace DataAccess.Repository
             await _dbContext.Requests.AddAsync(newRequest);
             // Step 4: Save to the database
             await _dbContext.SaveChangesAsync();
+            await SendRequestLeaveToManagerFirebase(newRequest.Id);
 
             return new
             {
@@ -499,7 +500,7 @@ namespace DataAccess.Repository
             return mergedDateRanges;
         }
 
-        public async Task<object> ApproveRequestAndChangeWorkslotEmployee(Guid requestId, Guid employeeIdDecider)
+        public async Task<object> ApproveRequestAndChangeWorkslotEmployee(Guid requestId, Guid? employeeIdDecider)
         {
             // Step 1: Retrieve the Request by requestId
             var request = await _dbContext.Requests
@@ -514,6 +515,7 @@ namespace DataAccess.Repository
             // Update the Request status to Approve
             request.Status = RequestStatus.Approved;
             request.EmployeeIdLastDecider = employeeIdDecider;
+            request.Status = RequestStatus.Approved;
 
             // Step 2: Find all WorkslotEmployees that should be updated
             var fromDate = request.RequestLeave.FromDate;
@@ -543,6 +545,7 @@ namespace DataAccess.Repository
 
             // Step 4: Save changes to the database
             await _dbContext.SaveChangesAsync();
+            await SendRequestLeaveToEmployeeFirebase(requestId);
 
             return new { message = "Request approved and WorkslotEmployee updated successfully" };
         }
@@ -609,6 +612,7 @@ namespace DataAccess.Repository
 
             // Save the changes to the database
             await _dbContext.SaveChangesAsync();
+            await SendRequestLeaveToEmployeeFirebase(requestId);
 
             return new { message = "Leave request cancelled successfully." };
         }
@@ -708,7 +712,7 @@ namespace DataAccess.Repository
             return result;
         }
 
-        public async Task<object> DeleteLeaveRequestIfNotApproved(Guid requestId)
+        public async Task<object> DeleteLeaveRequestIfNotApproved(Guid requestId, Guid? employeeIdDecider)
         {
             // Retrieve the request by its Id
             var request = await _dbContext.Requests
@@ -728,6 +732,7 @@ namespace DataAccess.Repository
 
             // Mark the request and request leave as deleted
             request.IsDeleted = true;
+            request.EmployeeIdLastDecider  = employeeIdDecider;
             if (request.RequestLeave != null)
             {
                 request.RequestLeave.IsDeleted = true;
@@ -739,7 +744,23 @@ namespace DataAccess.Repository
             return new { message = "Leave request Deleted successfully." };
         }
 
-        public async Task<bool> SendLeaveRequestStatusToFirebase(Guid requestId)
+        public async Task<bool> SendRequestLeaveToManagerFirebase(Guid requestId)
+        {
+            // Define the path specific to the manager
+            string managerPath = "/managerNoti"; // Replace '/managerPath' with the actual path for the manager
+                                                 // Call the SendLeaveRequestStatusToFirebase method with the manager path
+            return await SendLeaveRequestStatusToFirebase(requestId, managerPath);
+        }
+
+        public async Task<bool> SendRequestLeaveToEmployeeFirebase(Guid requestId)
+        {
+            // Define the path specific to the employee
+            string employeePath = "/employeeNoti"; // Replace '/employeePath' with the actual path for the employee
+                                                   // Call the SendLeaveRequestStatusToFirebase method with the employee path
+            return await SendLeaveRequestStatusToFirebase(requestId, employeePath);
+        }
+
+        public async Task<bool> SendLeaveRequestStatusToFirebase(Guid requestId, string path)
         {
             var request = await _dbContext.Requests
                 .Include(r => r.RequestLeave)
@@ -753,9 +774,8 @@ namespace DataAccess.Repository
             var firebaseData = new
             {
                 requestId = request.Id,
-                employeeId = request.EmployeeSendRequestId,
-                accountIdSendRequest = request.EmployeeSendRequest.UserID,
-                //accountIdLastDecidedRequest = request.
+                employeeIdSenderRequest = request.EmployeeSendRequestId,
+                employeeIdLastDecidedRequest = request.EmployeeIdLastDecider,
                 leaveTypeId = request.RequestLeave.LeaveTypeId,
                 status = request.Status.ToString(),
                 reason = request.Reason,
@@ -767,7 +787,7 @@ namespace DataAccess.Repository
             var json = JsonSerializer.Serialize(firebaseData);
             var httpClient = new HttpClient();
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var result = await httpClient.PostAsync("https://nextjs-course-f2de1-default-rtdb.firebaseio.com/leaveRequests.json", content);
+            var result = await httpClient.PostAsync("https://nextjs-course-f2de1-default-rtdb.firebaseio.com/leaveRequests" + path + ".json", content);
 
             return result.IsSuccessStatusCode;
         }
