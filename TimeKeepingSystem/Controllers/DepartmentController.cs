@@ -23,9 +23,9 @@ namespace TimeKeepingSystem.Controllers
         private readonly IUserAccountRepository repositoryAccount;
         private readonly IConfiguration configuration;
         private readonly IWorkDateSettingService _service;
-        private readonly IDepartmentService _departmentService;
-        private readonly IDepartmentRepository _departmentRepository;
-        public DepartmentController(IUserAccountRepository _repositoryAccount, IConfiguration configuration, IWorkDateSettingService service, IDepartmentService departmentService, IDepartmentRepository departmentRepository)
+        private readonly ITeamService _departmentService;
+        private readonly ITeamRepository _departmentRepository;
+        public DepartmentController(IUserAccountRepository _repositoryAccount, IConfiguration configuration, IWorkDateSettingService service, ITeamService departmentService, ITeamRepository departmentRepository)
         {
             repositoryAccount = _repositoryAccount;
             this.configuration = configuration;
@@ -208,6 +208,20 @@ namespace TimeKeepingSystem.Controllers
         public Task<object> GetTeamInfoByEmployeeIdAsync(Guid employeeId)
         {
             return _departmentRepository.GetTeamInfoByEmployeeIdAsync(employeeId);
+        }
+
+        [HttpPut("update-teammember-role-info-of-department")]
+        public async Task<ActionResult<object>> UpdateTeamInformation(TeamUpdateDTO data)
+        {
+            try
+            {
+                return Ok(await _departmentRepository.UpdateTeamInformation(data));
+
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }

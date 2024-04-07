@@ -15,6 +15,7 @@ namespace BusinessObject.DTO
         public string? timeEnd { get; set; }
         public string? reason { get; set; }
         public string? linkFile { get; set; }
+        public string? messageFromDecider { get; set; }
         public Guid? workingStatusId { get; set; }
         public bool? isDeleted { get; set; }
         public int? status { get; set; }

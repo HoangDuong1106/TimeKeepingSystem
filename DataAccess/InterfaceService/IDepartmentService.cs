@@ -3,7 +3,7 @@ using System;
 
 namespace DataAccess.InterfaceService
 {
-    public interface IDepartmentService
+    public interface ITeamService
     {
         Task<Team> GetDepartmentAsync(Guid departmentId);
         List<DepartmentDTO> GetDepartmentsWithoutManager();

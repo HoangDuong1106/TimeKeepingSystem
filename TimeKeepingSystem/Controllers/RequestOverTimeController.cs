@@ -1,5 +1,6 @@
 
 using BusinessObject.DTO;
+using DataAccess.InterfaceRepository;
 using DataAccess.InterfaceService;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,12 +13,14 @@ namespace TimeKeepingSystem.Controllers
         private readonly IAttendanceStatusService _service;
         private readonly IRequestLeaveService _requestLeaveService;
         private readonly IRequestOverTimeService _requestOverTimeService;
+        private readonly IRequestOverTimeRepository _requestOverTimeRepository;
 
-        public RequestOverTimeController(IAttendanceStatusService service, IRequestLeaveService requestLeaveService, IRequestOverTimeService requestOverTimeService)
+        public RequestOverTimeController(IAttendanceStatusService service, IRequestLeaveService requestLeaveService, IRequestOverTimeService requestOverTimeService, IRequestOverTimeRepository requestOverTimeRepository)
         {
             _service = service;
             _requestLeaveService = requestLeaveService;
             _requestOverTimeService = requestOverTimeService;
+            _requestOverTimeRepository = requestOverTimeRepository;
         }
 
         [HttpPost("create-request-over-time-of-employee")]
@@ -65,6 +68,32 @@ namespace TimeKeepingSystem.Controllers
             } catch(Exception ex)
             {
                 return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPatch("cancel-approved-OT-request-for-hr")]
+        public async Task<ActionResult<object>> CancelApprovedLeaveRequest(RequestReasonDTO request)
+        {
+            try
+            {
+                return Ok(await _requestOverTimeRepository.CancelApprovedOvertimeRequest(request));
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+
+        [HttpDelete("delete-nonapproved-OT-request-for-employee")]
+        public async Task<ActionResult<object>> DeleteLeaveRequestIfNotApproved(Guid requestId, Guid? employeeIdDecider)
+        {
+            try
+            {
+                return Ok(await _requestOverTimeRepository.DeleteOvertimeRequestIfNotApproved(requestId, employeeIdDecider));
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
             }
         }
     }

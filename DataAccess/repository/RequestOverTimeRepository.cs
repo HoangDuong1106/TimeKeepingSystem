@@ -176,6 +176,12 @@ namespace DataAccess.Repository
                 isRequestChange = true;
             }
 
+            if (dto.messageFromDecider != null)
+            {
+                request.Message = dto.messageFromDecider;
+                isRequestChange = true;
+            }
+
             if (dto.status != null)
             {
                 request.Status = dto.status == 0 ? RequestStatus.Pending : (dto.status == 1 ? RequestStatus.Approved : RequestStatus.Rejected);
@@ -262,36 +268,134 @@ namespace DataAccess.Repository
             return result;
         }
 
-        public async Task<bool> SendOverTimeRequestStatusToFirebase(Guid requestId)
+        public async Task<object> CancelApprovedOvertimeRequest(RequestReasonDTO requestObj)
+        {
+            Guid requestId = requestObj.requestId;
+            string reason = requestObj.reason;
+
+            // Retrieve the request by requestId
+            var request = await _dbContext.Requests
+                                           .Include(r => r.RequestOverTime)
+                                           .FirstOrDefaultAsync(r => r.Id == requestId);
+
+            if (request == null)
+            {
+                throw new Exception("RequestId not found.");
+            }
+
+            if (request.RequestOverTime == null)
+            {
+                throw new Exception("Request OverTime not found.");
+            }
+            // Check if the overtime date is in the past
+            if (request.RequestOverTime.DateOfOverTime.Date < DateTime.Today)
+            {
+                throw new Exception("Cannot cancel overtime for past dates.");
+            }
+
+            // Check if the request is indeed approved; only approved requests can be cancelled
+            if (request.Status != RequestStatus.Approved)
+            {
+                throw new Exception("Only approved overtime requests can be cancelled.");
+            }
+
+            // Set the Request status to Cancelled or Rejected based on your application logic
+            request.Status = RequestStatus.Cancel; // Assuming Cancelled is a defined status in your system
+            request.Reason = reason;
+            request.EmployeeIdLastDecider = requestObj.employeeIdDecider;
+
+            // Assuming you have a specific logic to handle the cancellation of an overtime request
+            // For example, updating related entities or states specific to the overtime process
+
+            // Save the changes to the database
+            await _dbContext.SaveChangesAsync();
+            await SendRequestOvertimeToEmployeeFirebase(requestId);
+
+            return new { message = "Overtime request cancelled successfully." };
+        }
+
+        public async Task<object> DeleteOvertimeRequestIfNotApproved(Guid requestId, Guid? employeeIdDecider)
+        {
+            // Retrieve the request by its Id
+            var request = await _dbContext.Requests
+                                           .Include(r => r.RequestOverTime)
+                                           .FirstOrDefaultAsync(r => r.Id == requestId);
+
+            if (request == null)
+            {
+                throw new Exception("Overtime request not found.");
+            }
+
+            // Check if the request is already approved
+            if (request.Status == RequestStatus.Approved)
+            {
+                throw new Exception("Approved Overtime requests cannot be deleted.");
+            }
+
+            // Mark the request and request leave as deleted
+            request.IsDeleted = true;
+            request.EmployeeIdLastDecider = employeeIdDecider;
+            if (request.RequestOverTime != null)
+            {
+                request.RequestOverTime.IsDeleted = true;
+            }
+
+            // Save the changes to the database
+            await _dbContext.SaveChangesAsync();
+
+            return new { message = "Overtime request Deleted successfully." };
+        }
+
+
+        public async Task<bool> SendRequestOvertimeToManagerFirebase(Guid requestId)
+        {
+            // Define the path specific to the manager
+            string managerPath = "/managerNoti"; // Replace '/managerPath' with the actual path for the manager
+                                                 // Call the SendLeaveRequestStatusToFirebase method with the manager path
+            return await SendOvertimeRequestStatusToFirebase(requestId, managerPath);
+        }
+
+        public async Task<bool> SendRequestOvertimeToEmployeeFirebase(Guid requestId)
+        {
+            // Define the path specific to the employee
+            string employeePath = "/employeeNoti"; // Replace '/employeePath' with the actual path for the employee
+                                                   // Call the SendLeaveRequestStatusToFirebase method with the employee path
+            return await SendOvertimeRequestStatusToFirebase(requestId, employeePath);
+        }
+
+        public async Task<bool> SendOvertimeRequestStatusToFirebase(Guid requestId, string path)
         {
             var request = await _dbContext.Requests
                 .Include(r => r.RequestOverTime)
                 .FirstOrDefaultAsync(r => r.Id == requestId);
 
-            if (request == null)
+            if (request == null || request.RequestOverTime == null)
             {
-                return false; // Request not found
+                return false; // Request or its overtime part not found
             }
 
             var firebaseData = new
             {
                 requestId = request.Id,
-                employeeId = request.EmployeeSendRequestId,
-                overTimeId = request.RequestOverTimeId,
+                employeeIdSenderRequest = request.EmployeeSendRequestId,
+                employeeIdLastDecidedRequest = request.EmployeeIdLastDecider,
                 status = request.Status.ToString(),
                 reason = request.Reason,
-                fromHour = request.RequestOverTime.FromHour,
-                toHour = request.RequestOverTime.ToHour,
-                dateOfOverTime = request.RequestOverTime.DateOfOverTime
+                submitedDate = request.SubmitedDate,
+                dateOfOvertime = request.RequestOverTime.DateOfOverTime,
+                fromTime = request.RequestOverTime.FromHour,
+                toTime = request.RequestOverTime.ToHour,
+                numberOfHours = request.RequestOverTime.NumberOfHour
             };
 
             var json = JsonSerializer.Serialize(firebaseData);
             var httpClient = new HttpClient();
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var result = await httpClient.PostAsync("https://nextjs-course-f2de1-default-rtdb.firebaseio.com/overTimeRequests.json", content);
+            var result = await httpClient.PostAsync("https://nextjs-course-f2de1-default-rtdb.firebaseio.com/overtimeRequests/" + path + ".json", content);
 
             return result.IsSuccessStatusCode;
         }
+
 
     }
 }

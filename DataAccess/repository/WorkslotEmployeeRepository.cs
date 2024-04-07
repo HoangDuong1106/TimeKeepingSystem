@@ -14,9 +14,9 @@ namespace DataAccess.Repository
     {
         private readonly MyDbContext _dbContext;
         private readonly IAttendanceStatusRepository _attendanceStatusRepository;
-        private readonly IDepartmentRepository _departmentRepository;
+        private readonly ITeamRepository _departmentRepository;
 
-        public WorkslotEmployeeRepository(MyDbContext context, IAttendanceStatusRepository attendanceStatusRepository, IDepartmentRepository departmentRepository) : base(context)
+        public WorkslotEmployeeRepository(MyDbContext context, IAttendanceStatusRepository attendanceStatusRepository, ITeamRepository departmentRepository) : base(context)
         {
             // You can add more specific methods here if needed
             _dbContext = context;

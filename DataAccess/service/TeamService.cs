@@ -8,16 +8,16 @@ using DataAccess.Service;  // Assuming the service interfaces are in this namesp
 
 namespace DataAccess.Service
 {
-    public class TeamService : IDepartmentService
+    public class TeamService : ITeamService
     {
-        private readonly IDepartmentRepository _DepartmentRepository;
+        private readonly ITeamRepository _DepartmentRepository;
 
-        public TeamService(IDepartmentRepository DepartmentRepository)
+        public TeamService(ITeamRepository DepartmentRepository)
         {
             _DepartmentRepository = DepartmentRepository;
         }
 
-        // Implement the GetAllAsync method from IDepartmentService by calling the corresponding repository method
+        // Implement the GetAllAsync method from ITeamService by calling the corresponding repository method
         public async Task<List<DepartmentDTO>> GetAllAsync()
         {
             return await _DepartmentRepository.GetAllAsync();

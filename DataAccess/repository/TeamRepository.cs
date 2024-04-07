@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DataAccess.Repository
 {
-    public class TeamRepository : Repository<Team>, IDepartmentRepository
+    public class TeamRepository : Repository<Team>, ITeamRepository
     {
         private readonly MyDbContext _dbContext;
 
@@ -187,5 +187,94 @@ namespace DataAccess.Repository
 
             return departmentsWithoutManager;
         }
+
+        public async Task<object> UpdateTeamInformation(TeamUpdateDTO data)
+        {
+            var department = await _dbContext.Departments.Include(d => d.Employees).ThenInclude(e => e.UserAccount).FirstOrDefaultAsync(d => d.Id == data.DepartmentId);
+            if (department == null)
+            {
+                throw new Exception("Department not found.");
+            }
+
+            department.Name = data.DepartmentName; // Update department name if needed
+
+            // Remove employees who are no longer in the team or have changed teams
+            var currentTeamMemberIds = department.Employees.Select(e => e.Id).ToList();
+            foreach (var employeeId in currentTeamMemberIds)
+            {
+                if (!data.Team.Any(t => t.EmployeeId == employeeId))
+                {
+                    var employeeToRemove = department.Employees.FirstOrDefault(e => e.Id == employeeId);
+                    if (employeeToRemove != null)
+                    {
+                        department.Employees.Remove(employeeToRemove);
+                        employeeToRemove.DepartmentId = null; // Set DepartmentId to null when removed from the team
+                        employeeToRemove.Department = null; // Set Department to null as well
+                    }
+                }
+            }
+
+            // Update existing team members and add new members
+            foreach (var teamMember in data.Team)
+            {
+                var employee = await _dbContext.Employees.Include(e => e.UserAccount).FirstOrDefaultAsync(e => e.Id == teamMember.EmployeeId);
+                if (employee == null || employee.UserAccount == null)
+                {
+                    continue; // Or handle appropriately
+                }
+
+                // If the employee is part of another department, remove them from it
+                var otherDepartment = await _dbContext.Departments.Where(d => d.Id != department.Id && d.Employees.Any(e => e.Id == employee.Id)).FirstOrDefaultAsync();
+                if (otherDepartment != null)
+                {
+                    otherDepartment.Employees.Remove(employee);
+                    employee.DepartmentId = null; // Set DepartmentId to null when moved to another department
+                    employee.Department = null; // Set Department to null as well
+                }
+
+                // Update employee's role
+                var role = await _dbContext.Roles.FirstOrDefaultAsync(r => r.ID == teamMember.RoleId);
+                if (role == null)
+                {
+                    continue; // Or handle appropriately
+                }
+
+                employee.UserAccount.Role = role;
+                employee.UserAccount.RoleID = role.ID;
+
+                // Add employee to the new department if not already present
+                if (!department.Employees.Contains(employee))
+                {
+                    department.Employees.Add(employee);
+                    employee.DepartmentId = department.Id; // Set DepartmentId to the new department
+                    employee.Department = department; // Set Department to the new department
+                }
+            }
+
+            // Update the manager if changed
+            var currentManager = department.Employees.FirstOrDefault(e => e.Id == department.ManagerId);
+            if (currentManager?.UserAccount.Role.Name != "Manager" || currentManager.Id != data.ManagerId)
+            {
+                if (currentManager != null)
+                {
+                    var employeeRole = await _dbContext.Roles.FirstOrDefaultAsync(r => r.Name == "Employee");
+                    currentManager.UserAccount.Role = employeeRole;
+                }
+
+                var newManager = department.Employees.FirstOrDefault(e => e.Id == data.ManagerId);
+                if (newManager != null)
+                {
+                    var managerRole = await _dbContext.Roles.FirstOrDefaultAsync(r => r.Name == "Manager");
+                    newManager.UserAccount.Role = managerRole;
+                }
+
+                department.ManagerId = data.ManagerId; // Update department's manager reference
+            }
+
+            await _dbContext.SaveChangesAsync();
+            return new { message = "Update Team Successfully" };
+        }
+
+
     }
 }

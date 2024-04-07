@@ -21,8 +21,8 @@ namespace TimeKeepingSystem.Controllers
     {
         private readonly IUserAccountRepository repositoryAccount;
         private readonly IConfiguration configuration;
-        private readonly IDepartmentService _departmentService;
-        public AccountController(IUserAccountRepository _repositoryAccount, IConfiguration configuration, IDepartmentService departmentService)
+        private readonly ITeamService _departmentService;
+        public AccountController(IUserAccountRepository _repositoryAccount, IConfiguration configuration, ITeamService departmentService)
         {
             repositoryAccount = _repositoryAccount;
             this.configuration = configuration;
