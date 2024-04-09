@@ -69,7 +69,7 @@ namespace DataAccess.Repository
             // Check for null or invalid DTO fields
             if (dto.WorkslotEmployeeId == null)
             {
-                throw new Exception("Lack of required fields: RealHourStart, RealHourEnd, Name, reason");
+                throw new Exception("Lack of required fields: RealHourStart, RealHourEnd, Name, messageFromDecider");
             }
             var workslotEmployee = _dbContext.WorkslotEmployees.Include(we => we.Workslot).FirstOrDefault(we => we.Id == dto.WorkslotEmployeeId && !we.Workslot.IsMorning);
             // Initialize new RequestWorkTime object
@@ -236,7 +236,7 @@ namespace DataAccess.Repository
         //                    TimeLeaveEarly = (DateTime.ParseExact(workslotEmployee.Workslot.ToHour, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(workslotEmployee.CheckOutTime, "HH:mm", CultureInfo.InvariantCulture)).TotalHours,
         //                    TimeComeLate = (DateTime.ParseExact(workslotEmployee.CheckInTime, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(workslotEmployee.Workslot.FromHour, "HH:mm", CultureInfo.InvariantCulture)).TotalHours,
         //                    statusName = request.Status.ToString(),
-        //                    reason = request.Reason,
+        //                    messageFromDecider = request.Reason,
         //                    linkFile = request.PathAttachmentFile
         //                });
         //            } else
@@ -252,7 +252,7 @@ namespace DataAccess.Repository
         //                    TimeLeaveEarly = (DateTime.ParseExact(workslotEmployee.Workslot.ToHour, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(workslotEmployee.CheckOutTime, "HH:mm", CultureInfo.InvariantCulture)).TotalHours,
         //                    TimeComeLate = (DateTime.ParseExact(workslotEmployee.CheckInTime, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(workslotEmployee.Workslot.FromHour, "HH:mm", CultureInfo.InvariantCulture)).TotalHours,
         //                    statusName = "Lack Of Work Time",
-        //                    reason = null,
+        //                    messageFromDecider = null,
         //                    linkFile = null
         //                });
         //            }
@@ -303,7 +303,7 @@ namespace DataAccess.Repository
         //                        TimeLeaveEarly = (DateTime.ParseExact(afternoonSlot.Workslot.ToHour, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(afternoonSlot.CheckOutTime, "HH:mm", CultureInfo.InvariantCulture)).TotalHours,
         //                        TimeComeLate = (DateTime.ParseExact(morningSlot.CheckInTime, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(morningSlot.Workslot.FromHour, "HH:mm", CultureInfo.InvariantCulture)).TotalHours,
         //                        statusName = request.Status.ToString(),
-        //                        reason = request.Reason,
+        //                        messageFromDecider = request.Reason,
         //                        linkFile = request.PathAttachmentFile
         //                    });
         //                }
@@ -320,7 +320,7 @@ namespace DataAccess.Repository
         //                        TimeLeaveEarly = (DateTime.ParseExact(afternoonSlot.Workslot.ToHour, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(afternoonSlot.CheckOutTime, "HH:mm", CultureInfo.InvariantCulture)).TotalHours,
         //                        TimeComeLate = (DateTime.ParseExact(morningSlot.CheckInTime, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(morningSlot.Workslot.FromHour, "HH:mm", CultureInfo.InvariantCulture)).TotalHours,
         //                        statusName = "Lack Of Work Time",
-        //                        reason = null,
+        //                        messageFromDecider = null,
         //                        linkFile = null
         //                    });
         //                }

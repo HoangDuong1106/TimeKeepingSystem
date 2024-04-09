@@ -160,6 +160,19 @@ namespace TimeKeepingSystem.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        [HttpPatch("reject-leave-request")]
+        public async Task<ActionResult<object>> RejectLeaveRequest(RequestReasonDTO request)
+        {
+            try
+            {
+                return Ok(await _requestLeaveRepository.RejectLeaveRequest(request));
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
     }
 }
 

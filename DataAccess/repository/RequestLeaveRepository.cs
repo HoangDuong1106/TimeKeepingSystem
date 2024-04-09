@@ -557,10 +557,49 @@ namespace DataAccess.Repository
             return new { message = "Request approved and WorkslotEmployee updated successfully" };
         }
 
+        public async Task<object> RejectLeaveRequest(RequestReasonDTO requestObj)
+        {
+            Guid requestId = requestObj.requestId;
+            string reason = requestObj.messageFromDecider;
+
+            // Retrieve the request by requestId
+            var request = await _dbContext.Requests
+                                           .Include(r => r.RequestLeave)
+                                           .FirstOrDefaultAsync(r => r.Id == requestId);
+
+            if (request == null)
+            {
+                throw new Exception("RequestId not found.");
+            }
+
+            if (request.RequestLeave == null)
+            {
+                throw new Exception("Request Leave not found.");
+            }
+            // Check if the leave date is in the past
+            if (request.RequestLeave.FromDate.Date < DateTime.Today)
+            {
+                throw new Exception("Cannot cancel leave for past dates.");
+            }
+
+            // Check if the request is indeed approved; only approved requests can be cancelled
+
+            // Set the Request status to Cancelled or Rejected based on your application logic
+            request.Status = RequestStatus.Rejected; // Assuming Cancelled is a defined status in your system
+            request.Message = reason;
+            request.EmployeeIdLastDecider = requestObj.employeeIdDecider;
+
+            // Save the changes to the database
+            await _dbContext.SaveChangesAsync();
+            await SendRequestLeaveToEmployeeFirebase(requestId);
+
+            return new { message = "Leave request rejected successfully." };
+        }
+
         public async Task<object> CancelApprovedLeaveRequest(RequestReasonDTO requestObj)
         {
             Guid requestId = requestObj.requestId;
-            string reason = requestObj.reason;
+            string reason = requestObj.messageFromDecider;
 
             // Retrieve the request by requestId
             var request = await _dbContext.Requests
@@ -590,7 +629,7 @@ namespace DataAccess.Repository
 
             // Set the Request status to Cancelled or Rejected based on your application logic
             request.Status = RequestStatus.Cancel; // Assuming Cancelled is a defined status in your system
-            request.Reason = reason;
+            request.Message = reason;
             request.EmployeeIdLastDecider = requestObj.employeeIdDecider;
 
             // Find all WorkslotEmployees that were updated due to this request and reset their attendance status

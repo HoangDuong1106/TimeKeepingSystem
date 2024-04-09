@@ -9,7 +9,7 @@ namespace BusinessObject.DTO
     public class RequestReasonDTO
     {
         public Guid requestId { get; set; }
-        public string reason { get; set; }
+        public string messageFromDecider { get; set; }
         public Guid? employeeIdDecider { get; set; }
     }
 }

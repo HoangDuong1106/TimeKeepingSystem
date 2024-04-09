@@ -79,7 +79,7 @@ namespace DataAccess.Repository
             // Check for null or invalid DTO fields
             if (dto.timeStart == null || dto.timeEnd == null || dto.Date == null || dto.reason == null)
             {
-                throw new Exception("lack of 1 in 4 field: timeStart, NumberOfHour, Date, reason");
+                throw new Exception("lack of 1 in 4 field: timeStart, NumberOfHour, Date, messageFromDecider");
             }
             var workingStatus = _dbContext.WorkingStatuses.FirstOrDefault(ws => ws.Id == dto.workingStatusId);
             if (workingStatus == null)
@@ -294,7 +294,7 @@ namespace DataAccess.Repository
         public async Task<object> CancelApprovedOvertimeRequest(RequestReasonDTO requestObj)
         {
             Guid requestId = requestObj.requestId;
-            string reason = requestObj.reason;
+            string reason = requestObj.messageFromDecider;
 
             // Retrieve the request by requestId
             var request = await _dbContext.Requests
@@ -324,7 +324,7 @@ namespace DataAccess.Repository
 
             // Set the Request status to Cancelled or Rejected based on your application logic
             request.Status = RequestStatus.Cancel; // Assuming Cancelled is a defined status in your system
-            request.Reason = reason;
+            request.Message = reason;
             request.EmployeeIdLastDecider = requestObj.employeeIdDecider;
 
             // Assuming you have a specific logic to handle the cancellation of an overtime request
