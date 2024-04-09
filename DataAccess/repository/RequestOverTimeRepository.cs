@@ -61,11 +61,11 @@ namespace DataAccess.Repository
                     timeStart = r.RequestOverTime.FromHour.ToString("HH:mm"),
                     NumberOfHour = r.RequestOverTime.NumberOfHour,
                     timeEnd = r.RequestOverTime.ToHour.ToString("HH:mm"),
-                    statusRequest = r.Status,
-                    status = r.Status.ToString(),
+                    statusRequest = r.Status.ToString(),
                     reason = r.Reason,
+                    reasonReject = r.Message,
                     linkFile = r.PathAttachmentFile,
-                    workingStatus = _dbContext.WorkingStatuses.FirstOrDefault(ws => ws.Id == r.RequestOverTime.WorkingStatusId)?.Name ?? "",
+                    status = _dbContext.WorkingStatuses.FirstOrDefault(ws => ws.Id == r.RequestOverTime.WorkingStatusId)?.Name ?? "",
                     workingStatusId = r.RequestOverTime.WorkingStatusId,
                     IsDeleted = r.IsDeleted
                 });
@@ -146,6 +146,10 @@ namespace DataAccess.Repository
         {
             // Step 1: Retrieve the record from the database using its ID
             Request request = _dbContext.Requests.Include(r => r.RequestOverTime).Where(r => r.IsDeleted == false).Where(r => r.Id == dto.requestId && r.EmployeeSendRequestId == employeeId).FirstOrDefault();
+            if (request == null)
+            {
+                throw new Exception("request Id not found");
+            }
             RequestOverTime existingRequestOverTime = request.RequestOverTime;
 
             // Check if the RequestOverTime exists
@@ -274,7 +278,8 @@ namespace DataAccess.Repository
                     IsDeleted = r.RequestOverTime.IsDeleted,
                     status = r.Status.ToString(),
                     linkFile = r.PathAttachmentFile ?? "",
-                    reason = r.Reason
+                    reason = r.Reason,
+                    reasonReject = r.Message
                 });
             });
 
@@ -423,7 +428,78 @@ namespace DataAccess.Repository
             return result.IsSuccessStatusCode;
         }
 
+        public async Task<dynamic> GetEmployeeOvertimeSummaryAndManagerName(Guid employeeId)
+        {
+            // Get the current date information
+            var currentDate = DateTime.Now;
+            var currentMonth = currentDate.Month;
+            var currentYear = currentDate.Year;
 
+            // Calculate the total overtime hours in the current month and year
+            var totalOvertimeHoursInMonth = await _dbContext.Requests
+                .Include(r => r.RequestOverTime)
+                .Where(r => r.EmployeeSendRequestId == employeeId &&
+                            r.Status == RequestStatus.Approved &&
+                            r.requestType == RequestType.OverTime &&
+                            r.RequestOverTime.DateOfOverTime.Year == currentYear &&
+                            r.RequestOverTime.DateOfOverTime.Month == currentMonth)
+                .SumAsync(r => r.RequestOverTime.NumberOfHour);
+
+            var totalOvertimeHoursInYear = await _dbContext.Requests
+                .Include(r => r.RequestOverTime)
+                .Where(r => r.EmployeeSendRequestId == employeeId &&
+                            r.Status == RequestStatus.Approved &&
+                            r.requestType == RequestType.OverTime &&
+                            r.RequestOverTime.DateOfOverTime.Year == currentYear)
+                .SumAsync(r => r.RequestOverTime.NumberOfHour);
+
+            // Get the manager's name
+            var managerName = await _dbContext.Employees
+                .Include(e => e.UserAccount)
+                .Include(e => e.Department)
+                .ThenInclude(d => d.Employees)
+                .Where(e => e.Department.Employees.Any(emp => emp.Id == employeeId) && e.UserAccount.Role.Name == "Manager")
+                .Select(e => e.FirstName + " " + e.LastName)
+                .FirstOrDefaultAsync();
+
+            return new
+            {
+                TotalOvertimeHoursInMonth = totalOvertimeHoursInMonth,
+                TotalOvertimeHoursInYear = totalOvertimeHoursInYear,
+                ManagerName = managerName
+            };
+        }
+
+        public async Task<object> ApproveOvertimeRequestAndLogHours(Guid requestId, Guid? employeeIdDecider)
+        {
+            // Retrieve the Request by requestId
+            var request = await _dbContext.Requests
+                                          .Include(r => r.RequestOverTime)
+                                          .FirstOrDefaultAsync(r => r.Id == requestId);
+
+            if (request == null)
+            {
+                throw new Exception("Request not found");
+            }
+
+            // Update the Request status to Approved
+            request.Status = RequestStatus.Approved;
+            request.EmployeeIdLastDecider = employeeIdDecider;
+
+            // Assuming there's logic to log or handle the approved overtime hours in your system
+            // For example, updating Workslot or related overtime management entity
+
+            var overtimeDate = request.RequestOverTime.DateOfOverTime;
+
+            // Update the AttendanceStatus or WorkingStatus if needed
+
+            // Save changes to the database
+            await _dbContext.SaveChangesAsync();
+
+            await SendRequestOvertimeToEmployeeFirebase(requestId);
+
+            return new { message = "Overtime request approved successfully" };
+        }
 
     }
 }

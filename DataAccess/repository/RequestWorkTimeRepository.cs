@@ -55,6 +55,7 @@ namespace DataAccess.Repository
                     status = (int)r.Status,
                     statusName = r.Status.ToString(),
                     reason = r.Reason,
+                    reasonReject = r.Message,
                     linkFile = r.PathAttachmentFile,
                     WorkslotEmployeeId = r.RequestWorkTime.WorkslotEmployeeId
                 });
@@ -464,6 +465,7 @@ namespace DataAccess.Repository
                     status = (int)r.Status,
                     statusName = r.Status.ToString(),
                     reason = r.Reason,
+                    reasonReject = r.Message,
                     IsDeleted = r.RequestWorkTime?.IsDeleted ?? false
                 });
             }

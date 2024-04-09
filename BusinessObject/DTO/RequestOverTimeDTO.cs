@@ -16,12 +16,13 @@ namespace BusinessObject.DTO
         public bool? IsDeleted { get; set; }
         public string? reason { get; set; }
         public string? linkFile { get; set; }
-        public RequestStatus statusRequest { get; set; }
+        public string? statusRequest { get; set; }
         public string? status { get; set; }
         public double? timeInMonth { get; set; }
         public double? timeInYear { get; set; }
         public Guid? workingStatusId { get; set; }
         public string? submitDate { get; set; }
         public string? workingStatus { get; set; }
+        public string? reasonReject { get; set; }
     }
 }

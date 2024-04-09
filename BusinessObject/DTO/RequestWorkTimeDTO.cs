@@ -25,6 +25,7 @@ namespace BusinessObject.DTO
         public string? reason { get; set; }
         public string? linkFile { get; set; }
         public string? submitDate { get; set; }
+        public string? reasonReject { get; set; }
 
     }
 }

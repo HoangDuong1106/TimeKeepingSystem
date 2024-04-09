@@ -132,6 +132,7 @@ namespace DataAccess.Repository
                     status = (int)r.Status,
                     statusName = r.Status.ToString(),
                     reason = r.Reason,
+                    reasonReject = r.Message,
                     linkFile = r.PathAttachmentFile,
                     numberOfLeaveDate = dateRange.Count(),
                 });
@@ -776,15 +777,19 @@ namespace DataAccess.Repository
             {
                 return false; // Request not found
             }
+
             var manager = await _dbContext.Employees.FirstOrDefaultAsync(e => e.Id == request.EmployeeIdLastDecider);
+
+            // Generate a reverse timestamp key for sorting in Firebase (newer entries first)
+            long reverseTimestamp = DateTime.MaxValue.Ticks - DateTime.UtcNow.Ticks;
 
             var firebaseData = new
             {
                 requestId = request.Id,
                 employeeSenderId = request.EmployeeSendRequestId,
-                employeeSenderName = request.EmployeeSendRequest != null ? request.EmployeeSendRequest.FirstName + " " + request.EmployeeSendRequest.LastName : null,
+                employeeSenderName = request.EmployeeSendRequest?.FirstName + " " + request.EmployeeSendRequest?.LastName,
                 employeeDeciderId = request.EmployeeIdLastDecider,
-                employeeDeciderName = manager != null ? manager.FirstName + " " + manager.LastName : null,
+                employeeDeciderName = manager?.FirstName + " " + manager?.LastName,
                 leaveTypeId = request.RequestLeave.LeaveTypeId,
                 status = request.Status.ToString(),
                 reason = request.Reason,
@@ -802,10 +807,13 @@ namespace DataAccess.Repository
             var json = JsonSerializer.Serialize(firebaseData);
             var httpClient = new HttpClient();
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var result = await httpClient.PostAsync("https://nextjs-course-f2de1-default-rtdb.firebaseio.com" + path + ".json", content);
+
+            // Append the reverse timestamp key to the path to ensure ordering
+            var result = await httpClient.PutAsync($"https://nextjs-course-f2de1-default-rtdb.firebaseio.com{path}/{reverseTimestamp}.json", content);
 
             return result.IsSuccessStatusCode;
         }
+
 
     }
 }

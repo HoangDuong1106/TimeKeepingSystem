@@ -96,6 +96,32 @@ namespace TimeKeepingSystem.Controllers
                 return BadRequest(e.Message);
             }
         }
+
+        [HttpGet("get-total-hours-month-year-managername")]
+        public async Task<ActionResult<dynamic>> GetEmployeeOvertimeSummaryAndManagerName(Guid employeeId)
+        {
+            try
+            {
+                return Ok(await _requestOverTimeRepository.GetEmployeeOvertimeSummaryAndManagerName(employeeId));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPatch("approve-over-time-request")]
+        public async Task<ActionResult<object>> ApproveOvertimeRequestAndLogHours(Guid requestId, Guid? employeeIdDecider)
+        {
+            try
+            {
+                return Ok(await _requestOverTimeRepository.ApproveOvertimeRequestAndLogHours(requestId, employeeIdDecider));
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
     }
 }
 
