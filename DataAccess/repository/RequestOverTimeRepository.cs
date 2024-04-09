@@ -82,6 +82,10 @@ namespace DataAccess.Repository
                 throw new Exception("lack of 1 in 4 field: timeStart, NumberOfHour, Date, reason");
             }
             var workingStatus = _dbContext.WorkingStatuses.FirstOrDefault(ws => ws.Id == dto.workingStatusId);
+            if (workingStatus == null)
+            {
+                workingStatus = _dbContext.WorkingStatuses.FirstOrDefault(ws => ws.Name == "Not Work Yet");
+            }
 
             RequestOverTime newRequestOverTime = new RequestOverTime()
             {
@@ -98,11 +102,18 @@ namespace DataAccess.Repository
 
             await _dbContext.RequestOverTimes.AddAsync(newRequestOverTime);
 
+            Employee employeeSendRequest = _dbContext.Employees.FirstOrDefault(e => e.Id == employeeId);
+            if (employeeSendRequest == null)
+            {
+                throw new Exception("Employee Send Request Not Found");
+            }
+            Guid newRequestId = Guid.NewGuid();
             // Initialize new Request and RequestOvertime objects
             Request newRequest = new Request()
             {
-                Id = Guid.NewGuid(),
+                Id = newRequestId,
                 EmployeeSendRequestId = employeeId,
+                EmployeeSendRequest = employeeSendRequest,
                 Status = RequestStatus.Pending,  // default status
                 IsDeleted = false,
                 RequestOverTimeId = newRequestOverTime.Id,
@@ -122,6 +133,7 @@ namespace DataAccess.Repository
             
             await _dbContext.Requests.AddAsync(newRequest);
             await _dbContext.SaveChangesAsync();
+            await SendRequestOvertimeToManagerFirebase(newRequestId);
 
             return new
             {
@@ -163,6 +175,7 @@ namespace DataAccess.Repository
                 existingRequestOverTime.Name = dto.Name;
             }
             var isRequestChange = false;
+            var isStatusChange = false;
 
             if (dto.linkFile != null)
             {
@@ -186,6 +199,7 @@ namespace DataAccess.Repository
             {
                 request.Status = dto.status == 0 ? RequestStatus.Pending : (dto.status == 1 ? RequestStatus.Approved : RequestStatus.Rejected);
                 isRequestChange = true;
+                isStatusChange = true;
             }
 
             if (dto.workingStatusId != null)
@@ -208,6 +222,10 @@ namespace DataAccess.Repository
             //_dbContext.RequestOverTimes.Update(existingRequestOverTime);
             //if (isRequestChange) _dbContext.Requests.Update(request);
             await _dbContext.SaveChangesAsync();
+            if (isStatusChange)
+            {
+                await SendRequestOvertimeToEmployeeFirebase(request.Id);
+            }
 
             return new
             {
@@ -371,33 +389,40 @@ namespace DataAccess.Repository
 
             if (request == null || request.RequestOverTime == null)
             {
-                return false; // Request or its overtime part not found
+                throw new Exception("Request OverTime of requestId " + requestId + " Not Found");
             }
+
             var manager = await _dbContext.Employees.FirstOrDefaultAsync(e => e.Id == request.EmployeeIdLastDecider);
 
             var firebaseData = new
             {
                 requestId = request.Id,
                 employeeSenderId = request.EmployeeSendRequestId,
-                employeeSenderName = request.EmployeeSendRequest.FirstName + " " + request.EmployeeSendRequest.LastName,
+                employeeSenderName = request.EmployeeSendRequest != null ? request.EmployeeSendRequest.FirstName + " " + request.EmployeeSendRequest.LastName : null,
                 employeeDeciderId = request.EmployeeIdLastDecider,
                 employeeDeciderName = manager != null ? manager.FirstName + " " + manager.LastName : null,
+                leaveTypeId = (string)null,  // No leave type for overtime
                 status = request.Status.ToString(),
                 reason = request.Reason,
+                messageOfDecider = request.Message,
                 submitedDate = request.SubmitedDate,
-                dateOfOvertime = request.RequestOverTime.DateOfOverTime,
-                fromTime = request.RequestOverTime.FromHour,
-                toTime = request.RequestOverTime.ToHour,
-                numberOfHours = request.RequestOverTime.NumberOfHour
+                fromDate = request.RequestOverTime.DateOfOverTime, // Assuming DateOfOverTime is the start date
+                toDate = (DateTime?)null, // No end date for overtime, can adjust if needed
+                fromHour = request.RequestOverTime.FromHour.ToString("HH:mm"),
+                toHour = request.RequestOverTime.ToHour.ToString("HH:mm"),
+                actionDate = DateTime.Now,
+                requestType = "Overtime",
+                isSeen = false
             };
 
             var json = JsonSerializer.Serialize(firebaseData);
             var httpClient = new HttpClient();
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var result = await httpClient.PostAsync("https://nextjs-course-f2de1-default-rtdb.firebaseio.com/overtimeRequests/" + path + ".json", content);
+            var result = await httpClient.PostAsync($"https://nextjs-course-f2de1-default-rtdb.firebaseio.com/{path}.json", content);
 
             return result.IsSuccessStatusCode;
         }
+
 
 
     }

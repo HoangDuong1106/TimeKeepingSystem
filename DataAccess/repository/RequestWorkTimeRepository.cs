@@ -88,11 +88,18 @@ namespace DataAccess.Repository
 
             await _dbContext.RequestWorkTimes.AddAsync(newRequestWorkTime);
 
+            Employee employeeSendRequest = _dbContext.Employees.FirstOrDefault(e => e.Id == employeeId);
+            if (employeeSendRequest == null)
+            {
+                throw new Exception("Employee Send Request Not Found");
+            }
+
             // Initialize new Request object
             Request newRequest = new Request()
             {
                 Id = Guid.NewGuid(),
                 EmployeeSendRequestId = employeeId,
+                EmployeeSendRequest = employeeSendRequest,
                 Status = RequestStatus.Pending,  // default status
                 IsDeleted = false,
                 RequestWorkTimeId = newRequestWorkTime.Id,

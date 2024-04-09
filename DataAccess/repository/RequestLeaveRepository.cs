@@ -361,11 +361,18 @@ namespace DataAccess.Repository
                 Name = dto.Name ?? ""
             };
 
+            Employee employeeSendRequest = _dbContext.Employees.FirstOrDefault(e => e.Id == employeeId);
+            if (employeeSendRequest == null)
+            {
+                throw new Exception("Employee Send Request Not Found");
+            }
+
             // Step 1: Create a new Request and populate its fields
             Request newRequest = new Request()
             {
                 Id = Guid.NewGuid(),
                 EmployeeSendRequestId = employeeId,
+                EmployeeSendRequest = employeeSendRequest,
                 Status = RequestStatus.Pending,  // default status
                 IsDeleted = false,
                 RequestLeaveId = newRequestLeave.Id,
@@ -509,7 +516,7 @@ namespace DataAccess.Repository
 
             if (request == null)
             {
-                return new { message = "Request not found" };
+                throw new Exception("Request not found");
             }
 
             // Update the Request status to Approve
@@ -534,8 +541,7 @@ namespace DataAccess.Repository
 
             if (newAttendanceStatus == null)
             {
-                return new { message = "Attendance status for the given LeaveTypeId not found" };
-            }
+                throw new Exception("Attendance status for the given LeaveTypeId not found");         }
 
             foreach (var workslotEmployee in workslotEmployees)
             {
@@ -776,7 +782,7 @@ namespace DataAccess.Repository
             {
                 requestId = request.Id,
                 employeeSenderId = request.EmployeeSendRequestId,
-                employeeSenderName = request.EmployeeSendRequest.FirstName + " " + request.EmployeeSendRequest.LastName,
+                employeeSenderName = request.EmployeeSendRequest != null ? request.EmployeeSendRequest.FirstName + " " + request.EmployeeSendRequest.LastName : null,
                 employeeDeciderId = request.EmployeeIdLastDecider,
                 employeeDeciderName = manager != null ? manager.FirstName + " " + manager.LastName : null,
                 leaveTypeId = request.RequestLeave.LeaveTypeId,
@@ -800,7 +806,6 @@ namespace DataAccess.Repository
 
             return result.IsSuccessStatusCode;
         }
-
 
     }
 }
