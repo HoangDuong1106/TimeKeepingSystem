@@ -770,24 +770,33 @@ namespace DataAccess.Repository
             {
                 return false; // Request not found
             }
+            var manager = await _dbContext.Employees.FirstOrDefaultAsync(e => e.Id == request.EmployeeIdLastDecider);
 
             var firebaseData = new
             {
                 requestId = request.Id,
-                employeeIdSenderRequest = request.EmployeeSendRequestId,
-                employeeIdLastDecidedRequest = request.EmployeeIdLastDecider,
+                employeeSenderId = request.EmployeeSendRequestId,
+                employeeSenderName = request.EmployeeSendRequest.FirstName + " " + request.EmployeeSendRequest.LastName,
+                employeeDeciderId = request.EmployeeIdLastDecider,
+                employeeDeciderName = manager != null ? manager.FirstName + " " + manager.LastName : null,
                 leaveTypeId = request.RequestLeave.LeaveTypeId,
                 status = request.Status.ToString(),
                 reason = request.Reason,
+                messageOfDecider = request.Message,
                 submitedDate = request.SubmitedDate,
                 fromDate = request.RequestLeave.FromDate,
-                toDate = request.RequestLeave.ToDate
+                toDate = request.RequestLeave.ToDate,
+                fromHour = (string)null,
+                toHour = (string)null,
+                actionDate = DateTime.Now,
+                requestType = "Leave",
+                isSeen = false
             };
 
             var json = JsonSerializer.Serialize(firebaseData);
             var httpClient = new HttpClient();
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var result = await httpClient.PostAsync("https://nextjs-course-f2de1-default-rtdb.firebaseio.com/leaveRequests" + path + ".json", content);
+            var result = await httpClient.PostAsync("https://nextjs-course-f2de1-default-rtdb.firebaseio.com" + path + ".json", content);
 
             return result.IsSuccessStatusCode;
         }

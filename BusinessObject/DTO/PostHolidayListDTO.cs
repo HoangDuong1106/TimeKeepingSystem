@@ -7,10 +7,6 @@ namespace BusinessObject.DTO
     {
         public Guid HolidayId { get; set; }
 
-
-        public Guid[] DepartmentIds { get; set; }
-        public Guid DepartmentId { get; set; }
-
         public string? StartDate { get; set; }
         public string? EndDate { get; set; }
 

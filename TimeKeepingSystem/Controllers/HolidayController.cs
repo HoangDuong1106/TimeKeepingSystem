@@ -52,23 +52,21 @@ namespace TimeKeepingSystem.Controllers
         {
             try
             {
-                foreach (Guid departmentId in acc.DepartmentIds)
+                var newHolidayId = Guid.NewGuid();
+                var newAcc = new DepartmentHoliday
                 {
-                    var newAcc = new DepartmentHoliday
-                    {
-                        HolidayId = Guid.NewGuid(),
-                        HolidayName = acc.HolidayName,
-                        Description = acc.Description,
-                        IsDeleted = false,
-                        IsRecurring = true,
-                        StartDate = DateTime.ParseExact( acc.StartDate, "yyyy/MM/dd", CultureInfo.InvariantCulture),
-                        EndDate = DateTime.ParseExact(acc.EndDate, "yyyy/MM/dd", CultureInfo.InvariantCulture),
+                    HolidayId = newHolidayId,
+                    HolidayName = acc.HolidayName,
+                    Description = acc.Description,
+                    IsDeleted = false,
+                    IsRecurring = true,
+                    StartDate = DateTime.ParseExact(acc.StartDate, "yyyy/MM/dd", CultureInfo.InvariantCulture),
+                    EndDate = DateTime.ParseExact(acc.EndDate, "yyyy/MM/dd", CultureInfo.InvariantCulture),
 
-                    };
-                    await repositoryAccount.AddHolidayt(newAcc);
-                }
+                };
+                await repositoryAccount.AddHolidayt(newAcc);
 
-                return Ok(new { StatusCode = 200, Message = "Add successful" });
+                return Ok(new { StatusCode = 200, Message = "Add successful", newHolidayId });
             }
             catch (Exception ex)
             {
@@ -80,9 +78,7 @@ namespace TimeKeepingSystem.Controllers
             }
         }
 
-
         [HttpPut]
-
         public async Task<IActionResult> Update(DepartmentHolidayDTO acc)
         {
             try
@@ -94,7 +90,7 @@ namespace TimeKeepingSystem.Controllers
                     HolidayName = acc.HolidayName,
                     Description = acc.Description,
                     IsDeleted = false,
-                    IsRecurring = true,
+                    IsRecurring = (bool)((acc.IsRecurring != null) ? acc.IsRecurring : true),
                     StartDate = acc.StartDate,
                     EndDate = acc.EndDate,
                 };

@@ -3,7 +3,6 @@ namespace BusinessObject.DTO
     public class DepartmentHolidayDTO
     {
         public Guid? HolidayId { get; set; }
-        public Guid? DepartmentId { get; set; }
         public string? HolidayName { get; set; }
         public string? Description { get; set; }
         public bool? IsRecurring { get; set; }

@@ -373,12 +373,15 @@ namespace DataAccess.Repository
             {
                 return false; // Request or its overtime part not found
             }
+            var manager = await _dbContext.Employees.FirstOrDefaultAsync(e => e.Id == request.EmployeeIdLastDecider);
 
             var firebaseData = new
             {
                 requestId = request.Id,
-                employeeIdSenderRequest = request.EmployeeSendRequestId,
-                employeeIdLastDecidedRequest = request.EmployeeIdLastDecider,
+                employeeSenderId = request.EmployeeSendRequestId,
+                employeeSenderName = request.EmployeeSendRequest.FirstName + " " + request.EmployeeSendRequest.LastName,
+                employeeDeciderId = request.EmployeeIdLastDecider,
+                employeeDeciderName = manager != null ? manager.FirstName + " " + manager.LastName : null,
                 status = request.Status.ToString(),
                 reason = request.Reason,
                 submitedDate = request.SubmitedDate,
