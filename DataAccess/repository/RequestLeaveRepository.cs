@@ -560,7 +560,7 @@ namespace DataAccess.Repository
         public async Task<object> RejectLeaveRequest(RequestReasonDTO requestObj)
         {
             Guid requestId = requestObj.requestId;
-            string reason = requestObj.messageFromDecider;
+            string reason = requestObj.reason;
 
             // Retrieve the request by requestId
             var request = await _dbContext.Requests
@@ -599,7 +599,7 @@ namespace DataAccess.Repository
         public async Task<object> CancelApprovedLeaveRequest(RequestReasonDTO requestObj)
         {
             Guid requestId = requestObj.requestId;
-            string reason = requestObj.messageFromDecider;
+            string reason = requestObj.reason;
 
             // Retrieve the request by requestId
             var request = await _dbContext.Requests

@@ -79,7 +79,7 @@ namespace DataAccess.Repository
             // Check for null or invalid DTO fields
             if (dto.timeStart == null || dto.timeEnd == null || dto.Date == null || dto.reason == null)
             {
-                throw new Exception("lack of 1 in 4 field: timeStart, NumberOfHour, Date, messageFromDecider");
+                throw new Exception("lack of 1 in 4 field: timeStart, NumberOfHour, Date, reason");
             }
             var workingStatus = _dbContext.WorkingStatuses.FirstOrDefault(ws => ws.Id == dto.workingStatusId);
             if (workingStatus == null)
@@ -294,7 +294,7 @@ namespace DataAccess.Repository
         public async Task<object> CancelApprovedOvertimeRequest(RequestReasonDTO requestObj)
         {
             Guid requestId = requestObj.requestId;
-            string reason = requestObj.messageFromDecider;
+            string reason = requestObj.reason;
 
             // Retrieve the request by requestId
             var request = await _dbContext.Requests

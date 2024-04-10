@@ -7,6 +7,7 @@ using OfficeOpenXml.Style;
 using System;
 using System.Drawing;
 using System.Globalization;
+using System.Linq;
 
 namespace DataAccess.Repository
 {
@@ -102,6 +103,39 @@ namespace DataAccess.Repository
             }).ToList();
         }
 
+        private async Task<List<TimeSlotDTO>> GetApprovedOvertimeRequests(Guid employeeId)
+        {
+            var overtimeRequests = await _dbContext.Requests
+                .Include(r => r.RequestOverTime)
+                .ThenInclude(rot => rot.WorkingStatus)
+                .Where(r => r.EmployeeSendRequestId == employeeId && r.Status == RequestStatus.Approved && r.requestType == RequestType.OverTime)
+                .ToListAsync();
+
+            return overtimeRequests.Select(ot => new TimeSlotDTO
+            {
+                Date = ot.RequestOverTime.DateOfOverTime.ToString("yyyy-MM-dd"),
+                StartTime = ot.RequestOverTime.FromHour.ToString("HH:mm"),
+                EndTime = ot.RequestOverTime.ToHour.ToString("HH:mm"),
+                CheckIn = null, // Overtime doesn't have check-in time
+                CheckOut = null, // Overtime doesn't have check-out time
+                Duration = (TimeSpan.Parse(ot.RequestOverTime.ToHour.ToString("HH:mm")) - TimeSpan.Parse(ot.RequestOverTime.FromHour.ToString("HH:mm"))).TotalHours.ToString("HH:mm"),
+                Status = ot.RequestOverTime.WorkingStatus.Name,
+                IsOvertime = true
+            }).ToList();
+        }
+
+        public class TimeSlotDTO
+        {
+            public string Date { get; set; }
+            public string StartTime { get; set; }
+            public string EndTime { get; set; }
+            public string CheckIn { get; set; }
+            public string CheckOut { get; set; }
+            public string? Duration { get; set; }
+            public string Status { get; set; }
+            public bool? IsOvertime { get; set; }
+        }
+
         public async Task<object> GetWorkSlotEmployeeByEmployeeId(Guid employeeId)
         {
             // Find the employee by Id
@@ -146,7 +180,7 @@ namespace DataAccess.Repository
                     group.WorkSlotEmployees.First().AttendanceStatus.LeaveType.Name :
                     group.WorkSlotEmployees.First().AttendanceStatus.WorkingStatus.Name;
 
-                result.Add(new
+                result.Add(new TimeSlotDTO
                 {
                     Date = group.Date.ToString("yyyy-MM-dd"),
                     StartTime = startTime,
@@ -157,6 +191,7 @@ namespace DataAccess.Repository
                     Status = status
                 });
             }
+
             // end of Time Slot
             var requestOfEmployee = _dbContext.Requests.Include(rq => rq.RequestLeave).Include(rq => rq.RequestWorkTime).Include(rq => rq.RequestOverTime).Where(rq => rq.EmployeeSendRequestId == employeeId);
             var requestLeavePending = requestOfEmployee.Where(rq => rq.requestType == RequestType.Leave).Where(rq => rq.Status == RequestStatus.Pending).Count();
@@ -179,12 +214,12 @@ namespace DataAccess.Repository
 
             // Prepare the result
             var AllTimeWork = new
-                {
-                    Name = "Worked",
-                    Data = monthlyWorkedHours
-                };
+            {
+                Name = "Worked",
+                Data = monthlyWorkedHours
+            };
 
-            //
+            result.AddRange(await GetApprovedOvertimeRequests(employeeId));
 
             return new
             {
