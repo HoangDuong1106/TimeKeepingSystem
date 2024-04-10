@@ -10,7 +10,7 @@ namespace DataAccess.InterfaceService
 
         // Empty interface
         Task<List<RequestOverTimeDTO>> GetAllAsync();
-        List<RequestOverTimeDTO> GetAllRequestOverTime(string? nameSearch, int status, string month);
+        List<RequestOverTimeDTO> GetAllRequestOverTime(string? nameSearch, int status, string month, Guid? employeeId);
         object GetRequestOverTimeOfEmployeeById(Guid employeeId);
     }
 }

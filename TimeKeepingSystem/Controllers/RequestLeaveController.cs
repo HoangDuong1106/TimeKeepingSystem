@@ -73,11 +73,11 @@ namespace TimeKeepingSystem.Controllers
         }
 
         [HttpGet("get-all-request-leave-of-all-employee")]
-        public ActionResult<object> GetRequestLeaveAllEmployee(string? nameSearch, int status)
+        public ActionResult<object> GetRequestLeaveAllEmployee(string? nameSearch, int status, Guid? employeeId)
         {
             try
             {
-                return Ok(_requestLeaveService.GetRequestLeaveAllEmployee(nameSearch, status));
+                return Ok(_requestLeaveRepository.GetRequestLeaveAllEmployee(nameSearch, status, employeeId));
             } catch (Exception ex)
             {
                 return BadRequest(ex.Message);

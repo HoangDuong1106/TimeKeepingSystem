@@ -39,10 +39,10 @@ namespace DataAccess.Service
             return await _requestOverTimeRepository.EditRequestOvertimeOfEmployee(dto, employeeId);
         }
 
-        public List<RequestOverTimeDTO> GetAllRequestOverTime(string? nameSearch, int status, string month)
+        public List<RequestOverTimeDTO> GetAllRequestOverTime(string? nameSearch, int status, string month, Guid? employeeId)
         {
             var monthDate = DateTime.ParseExact(month, "yyyy/MM/dd", CultureInfo.InvariantCulture);
-            return _requestOverTimeRepository.GetAllRequestOverTime(nameSearch, status, monthDate);
+            return _requestOverTimeRepository.GetAllRequestOverTime(nameSearch, status, monthDate, employeeId);
         }
     }
 }

@@ -8,7 +8,7 @@ namespace DataAccess.InterfaceService
         Task<object> ApproveRequestAndChangeWorkslotEmployee(Guid requestId, Guid? employeeIdDecider);
         Task<object> CreateRequestLeave(LeaveRequestDTO dto, Guid employeeId);
         Task<bool> EditRequestLeave(LeaveRequestDTO dto, Guid employeeId);
-        object GetRequestLeaveAllEmployee(string? nameSearch, int status);
+        object GetRequestLeaveAllEmployee(string? nameSearch, int status, Guid? employeeId);
         object GetRequestLeaveByRequestId(Guid requestId);
 
         // Empty interface

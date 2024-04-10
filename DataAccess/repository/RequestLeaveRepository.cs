@@ -100,30 +100,61 @@ namespace DataAccess.Repository
             return result;
         }
 
-        public object GetRequestLeaveAllEmployee(string? nameSearch, int status)
+        public object GetRequestLeaveAllEmployee(string? nameSearch, int status, Guid? employeeId = null)
         {
             var result = new List<LeaveRequestDTO>();
             var list = _dbContext.Requests
                 .Include(r => r.RequestLeave)
-                .ThenInclude(rl => rl.LeaveType)
+                    .ThenInclude(rl => rl.LeaveType)
                 .Include(r => r.RequestLeave)
-                .ThenInclude(rl => rl.WorkslotEmployees)
-                .ThenInclude(we => we.Workslot)
-                .Where(r => r.IsDeleted == false)
-                .Where(r => r.requestType == RequestType.Leave);
-            if (status != -1) list = list.Where(r => (int)r.Status == status);
+                    .ThenInclude(rl => rl.WorkslotEmployees)
+                        .ThenInclude(we => we.Workslot)
+                .Where(r => r.IsDeleted == false && r.requestType == RequestType.Leave);
+
+            // Filter by status if specified
+            if (status != -1)
+            {
+                list = list.Where(r => (int)r.Status == status);
+            }
+
+            // Filter by manager's department if employeeId is provided
+            Guid? departmentId = null;
+            if (employeeId.HasValue)
+            {
+                var manager = _dbContext.Employees
+                    .Include(e => e.UserAccount)
+                    .ThenInclude(ua => ua.Role)
+                    .FirstOrDefault(e => e.Id == employeeId);
+
+                if (manager != null && manager.UserAccount.Role.Name == "Manager")
+                {
+                    departmentId = manager.DepartmentId;
+                } else
+                {
+                    throw new Exception("EmployeeId is not Manager");
+                }
+            }
+
+            if (departmentId.HasValue)
+            {
+                list = list.Where(r => r.EmployeeSendRequest.DepartmentId == departmentId);
+            }
+
             list.ToList().ForEach(r =>
             {
-                var employee = _dbContext.Employees.Where(e => e.IsDeleted == false && e.Id == r.EmployeeSendRequestId).FirstOrDefault();
+                var employee = _dbContext.Employees.Where(e => e.IsDeleted == false && e.Id == r.EmployeeSendRequestId).FirstOrDefault(); // Directly get employee send request from the navigation property
                 if (employee == null) return;
+
                 List<DateRangeDTO> dateRange = null;
                 dateRange = r.RequestLeave.WorkslotEmployees.Where(r => r.IsDeleted == false).Select(we => new DateRangeDTO() { title = we.Workslot.DateOfSlot.ToString("yyyy/MM/dd"), type = we.Workslot.IsMorning ? "Morning" : "Afternoon" }).ToList().OrderBy(s => DateTime.ParseExact(s.title, "yyyy/MM/dd", CultureInfo.InvariantCulture)).ToList();
+
                 dateRange = MergeToFullDay(dateRange);
-                result.Add(new LeaveRequestDTO()
+
+                result.Add(new LeaveRequestDTO
                 {
                     id = r.Id,
                     employeeId = employee.Id,
-                    employeeName = employee.FirstName + " " + employee.LastName,
+                    employeeName = $"{employee.FirstName} {employee.LastName}",
                     submitDate = r.SubmitedDate.ToString("yyyy/MM/dd"),
                     startDate = r.RequestLeave.FromDate.ToString("yyyy/MM/dd"),
                     endDate = r.RequestLeave.ToDate.ToString("yyyy/MM/dd"),
@@ -138,7 +169,7 @@ namespace DataAccess.Repository
                 });
             });
 
-            if (nameSearch != null)
+            if (!string.IsNullOrEmpty(nameSearch))
             {
                 result = result.Where(r => r.employeeName.ToLower().Contains(nameSearch.ToLower())).ToList();
             }

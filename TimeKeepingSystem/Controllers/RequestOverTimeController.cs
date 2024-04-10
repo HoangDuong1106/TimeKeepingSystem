@@ -60,11 +60,11 @@ namespace TimeKeepingSystem.Controllers
         }
 
         [HttpGet("get-all-request-over-time")]
-        public ActionResult<List<RequestOverTimeDTO>> GetAllRequestOverTime(string? nameSearch, int status, string month)
+        public ActionResult<List<RequestOverTimeDTO>> GetAllRequestOverTime(string? nameSearch, int status, string month, Guid? employeeId)
         {
             try
             {
-                return Ok(_requestOverTimeService.GetAllRequestOverTime(nameSearch, status, month));
+                return Ok(_requestOverTimeService.GetAllRequestOverTime(nameSearch, status, month, employeeId));
             } catch(Exception ex)
             {
                 return BadRequest(ex.Message);

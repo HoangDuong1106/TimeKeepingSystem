@@ -64,11 +64,11 @@ namespace TimeKeepingSystem.Controllers
         }
 
         [HttpGet("get-all-work-time-request")]
-        public ActionResult<List<RequestWorkTimeDTO>> GetAllRequestWorkTime(string? nameSearch, int? status, string? month)
+        public ActionResult<List<RequestWorkTimeDTO>> GetAllRequestWorkTime(string? nameSearch, int? status, string? month, Guid? employeeId)
         {
             try
             {
-                return Ok(_service.GetAllRequestWorkTime(nameSearch, status, month));
+                return Ok(_service.GetAllRequestWorkTime(nameSearch, status, month, employeeId));
             } catch(Exception ex)
             {
                 return BadRequest(ex.Message);

@@ -244,7 +244,7 @@ namespace DataAccess.Repository
             };
         }
 
-        public List<RequestOverTimeDTO> GetAllRequestOverTime(string? nameSearch, int status, DateTime month)
+        public List<RequestOverTimeDTO> GetAllRequestOverTime(string? nameSearch, int status, DateTime month, Guid? employeeId = null)
         {
             var result = new List<RequestOverTimeDTO>();
             var list = _dbContext.Requests
@@ -254,6 +254,30 @@ namespace DataAccess.Repository
                 .Where(r => r.requestType == RequestType.OverTime);
 
             if (status != -1) list = list.Where(r => (int)r.Status == status);
+
+            // Filter by manager's department if employeeId is provided
+            Guid? departmentId = null;
+            if (employeeId != null)
+            {
+                var manager = _dbContext.Employees
+                    .Include(e => e.UserAccount)
+                    .ThenInclude(ua => ua.Role)
+                    .FirstOrDefault(e => e.Id == employeeId);
+
+                if (manager != null && manager.UserAccount.Role.Name == "Manager")
+                {
+                    departmentId = manager.DepartmentId;
+                }
+                else
+                {
+                    throw new Exception("EmployeeId is not Manager");
+                }
+            }
+
+            if (departmentId.HasValue)
+            {
+                list = list.Where(r => r.EmployeeSendRequest.DepartmentId == departmentId);
+            }
 
             list.Where(r => r.RequestOverTime.DateOfOverTime.Month == month.Month && r.RequestOverTime.DateOfOverTime.Year == month.Year).ToList().ForEach(r =>
             {

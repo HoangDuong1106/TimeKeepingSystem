@@ -395,7 +395,7 @@ namespace DataAccess.Repository
             return result;
         }
 
-        public List<RequestWorkTimeDTO> GetAllRequestWorkTime(string? nameSearch, int? status, string? month)
+        public List<RequestWorkTimeDTO> GetAllRequestWorkTime(string? nameSearch, int? status, string? month, Guid? employeeIdd = null)
         {
             var result = new List<RequestWorkTimeDTO>();
             var list = _dbContext.Requests
@@ -407,6 +407,30 @@ namespace DataAccess.Repository
             if (status.HasValue && status != -1)
             {
                 list = list.Where(r => (int)r.Status == status.Value);
+            }
+
+            // Filter by manager's department if employeeId is provided
+            Guid? departmentId = null;
+            if (employeeIdd.HasValue)
+            {
+                var manager = _dbContext.Employees
+                    .Include(e => e.UserAccount)
+                    .ThenInclude(ua => ua.Role)
+                    .FirstOrDefault(e => e.Id == employeeIdd);
+
+                if (manager != null && manager.UserAccount.Role.Name == "Manager")
+                {
+                    departmentId = manager.DepartmentId;
+                }
+                else
+                {
+                    throw new Exception("EmployeeId is not Manager");
+                }
+            }
+
+            if (departmentId.HasValue)
+            {
+                list = list.Where(r => r.EmployeeSendRequest.DepartmentId == departmentId);
             }
 
             // Processing the filter only if month is provided
