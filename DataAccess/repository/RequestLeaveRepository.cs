@@ -165,7 +165,7 @@ namespace DataAccess.Repository
                     reason = r.Reason,
                     reasonReject = r.Message,
                     linkFile = r.PathAttachmentFile,
-                    numberOfLeaveDate = dateRange.Count(),
+                    numberOfLeaveDate = CountNumOfLeaveDate(dateRange),
                 });
             });
 
@@ -390,7 +390,8 @@ namespace DataAccess.Repository
                 ToDate = DateTime.ParseExact(dto.endDate, "yyyy/MM/dd", CultureInfo.InvariantCulture),
                 LeaveTypeId = (Guid)dto.leaveTypeId,
                 IsDeleted = false,
-                Name = dto.Name ?? ""
+                Name = dto.Name ?? "",
+                SupportEmployeeId = dto.SupportEmployeeId,
             };
 
             Employee employeeSendRequest = _dbContext.Employees.Include(e => e.Department).FirstOrDefault(e => e.Id == employeeId);
@@ -462,10 +463,11 @@ namespace DataAccess.Repository
             };
         }
 
-        public void HandleFullday(List<DateRangeDTO> dateRange)
+        public double HandleFullday(List<DateRangeDTO> dateRange)
         {
             List<DateRangeDTO> newDateRange = new List<DateRangeDTO>();
             HashSet<string> existingEntries = new HashSet<string>();
+            double numOfLeaveDate = 0;
 
             foreach (var entry in dateRange)
             {
@@ -482,6 +484,7 @@ namespace DataAccess.Repository
 
                 if (entry.type == "Full Day")
                 {
+                    numOfLeaveDate += 1;
                     // Split Fullday into Morning and Afternoon, ensuring there are no duplicates
                     string morningKey = entry.title + "-Morning";
                     string afternoonKey = entry.title + "-Afternoon";
@@ -500,6 +503,7 @@ namespace DataAccess.Repository
                 }
                 else
                 {
+                    numOfLeaveDate += 0.5;
                     newDateRange.Add(entry);
                 }
             }
@@ -507,6 +511,39 @@ namespace DataAccess.Repository
             // Replace the original dateRange with the new one
             dateRange.Clear();
             dateRange.AddRange(newDateRange);
+
+            return numOfLeaveDate;
+        }
+
+        public double CountNumOfLeaveDate(List<DateRangeDTO> dateRange)
+        {
+            HashSet<string> existingEntries = new HashSet<string>();
+            double numOfLeaveDate = 0;
+
+            foreach (var entry in dateRange)
+            {
+                string key = entry.title + "-" + entry.type;
+
+                // Skip this entry if it already exists
+                if (existingEntries.Contains(key))
+                {
+                    continue;
+                }
+
+                // Add to existing entries
+                existingEntries.Add(key);
+
+                if (entry.type == "Full Day")
+                {
+                    numOfLeaveDate += 1;
+                }
+                else
+                {
+                    numOfLeaveDate += 0.5;
+                }
+            }
+
+            return numOfLeaveDate;
         }
 
         public static List<DateRangeDTO> MergeToFullDay(List<DateRangeDTO> dateRanges)
@@ -882,6 +919,38 @@ namespace DataAccess.Repository
             var result = await httpClient.PutAsync($"https://nextjs-course-f2de1-default-rtdb.firebaseio.com{path}/{reverseTimestamp}.json", content);
 
             return result.IsSuccessStatusCode;
+        }
+
+        public async Task<object> DeleteLeaveRequestByIdAsync(Guid requestId)
+        {
+            // Retrieve the request and its associated leave request by requestId
+            var request = await _dbContext.Requests
+                                          .Include(r => r.RequestLeave)
+                                          .FirstOrDefaultAsync(r => r.Id == requestId);
+
+            // Check if the request exists
+            if (request == null)
+            {
+                throw new Exception("Request not found.");
+            }
+
+            // Check if the request is already deleted
+            if (request.IsDeleted)
+            {
+                return "Request is already deleted.";
+            }
+
+            // Mark the request and its leave request as deleted
+            request.IsDeleted = true;
+            if (request.RequestLeave != null)
+            {
+                request.RequestLeave.IsDeleted = true;
+            }
+
+            // Save changes to the database
+            await _dbContext.SaveChangesAsync();
+
+            return "Request and its leave request have been successfully deleted.";
         }
 
 

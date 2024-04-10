@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 
 public class RequestLeave
 {
@@ -21,6 +22,8 @@ public class RequestLeave
     public DateTime FromDate { get; set; }
     public DateTime ToDate { get; set; }
     public virtual List<WorkslotEmployee> WorkslotEmployees { get; set; }
+    [AllowNull]
+    public Guid? SupportEmployeeId { get; set; }
     public bool IsDeleted { get; set; } = false;  // Soft delete flag
 
 }

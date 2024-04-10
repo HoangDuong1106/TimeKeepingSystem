@@ -5,6 +5,7 @@ namespace DataAccess.InterfaceRepository { public interface IRequestLeaveReposit
         Task<object> ApproveRequestAndChangeWorkslotEmployee(Guid requestId, Guid? employeeIdDecider);
         Task<object> CancelApprovedLeaveRequest(RequestReasonDTO request);
         Task<object> CreateRequestLeave(LeaveRequestDTO dto, Guid employeeId);
+        Task<object> DeleteLeaveRequestByIdAsync(Guid requestId);
         Task<object> DeleteLeaveRequestIfNotApproved(Guid requestId, Guid? employeeIdDecider);
         Task<bool> EditRequestLeave(LeaveRequestDTO dto, Guid employeeId);
         Task<List<RequestLeaveDTO>> GetAllAsync();

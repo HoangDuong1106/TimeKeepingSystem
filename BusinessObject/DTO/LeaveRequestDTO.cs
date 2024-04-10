@@ -26,5 +26,6 @@ namespace BusinessObject.DTO
         public string? linkFile { get; set; }
         public double? numberOfLeaveDate { get; set; }
         public List<DateRangeDTO?>? dateRange { get; set; }
+        public Guid? SupportEmployeeId { get; set; }
     }
 }

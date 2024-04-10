@@ -173,6 +173,19 @@ namespace TimeKeepingSystem.Controllers
                 return BadRequest(e.Message);
             }
         }
+
+        [HttpDelete("delete-leave-request-by-request-id")]
+        public async Task<ActionResult<object>> DeleteLeaveRequestByIdAsync(Guid requestId)
+        {
+            try
+            {
+                return Ok(await _requestLeaveRepository.DeleteLeaveRequestByIdAsync(requestId));
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
     }
 }
 
