@@ -362,7 +362,7 @@ namespace DataAccess.Repository
                 Name = dto.Name ?? ""
             };
 
-            Employee employeeSendRequest = _dbContext.Employees.FirstOrDefault(e => e.Id == employeeId);
+            Employee employeeSendRequest = _dbContext.Employees.Include(e => e.Department).FirstOrDefault(e => e.Id == employeeId);
             if (employeeSendRequest == null)
             {
                 throw new Exception("Employee Send Request Not Found");
@@ -383,7 +383,7 @@ namespace DataAccess.Repository
                 Reason = dto.reason ?? "",
                 SubmitedDate = DateTime.Now,
                 requestType = RequestType.Leave,
-
+                EmployeeIdLastDecider = employeeSendRequest.Department.ManagerId,
             };
 
             List<WorkslotEmployee> newWorkslotEmployees = new List<WorkslotEmployee>();

@@ -22,10 +22,12 @@ namespace TimeKeepingSystem.Controllers
     {
         private readonly IUserAccountRepository repositoryAccount;
         private readonly IConfiguration configuration;
-        public HolidayController(IUserAccountRepository _repositoryAccount, IConfiguration configuration)
+        private readonly IDepartmentHolidayRepository _departmentHolidayRepository;
+        public HolidayController(IUserAccountRepository _repositoryAccount, IConfiguration configuration, IDepartmentHolidayRepository departmentHolidayRepository)
         {
             repositoryAccount = _repositoryAccount;
             this.configuration = configuration;
+            _departmentHolidayRepository = departmentHolidayRepository;
         }
 
         [HttpGet]
@@ -48,25 +50,11 @@ namespace TimeKeepingSystem.Controllers
 
         [HttpPost]
         //[Authorize(Roles = "1")]
-        public async Task<IActionResult> Create(PostHolidayListDTO acc)
+        public async Task<ActionResult<object>> Create(PostHolidayListDTO acc)
         {
             try
             {
-                var newHolidayId = Guid.NewGuid();
-                var newAcc = new DepartmentHoliday
-                {
-                    HolidayId = newHolidayId,
-                    HolidayName = acc.HolidayName,
-                    Description = acc.Description,
-                    IsDeleted = false,
-                    IsRecurring = true,
-                    StartDate = DateTime.ParseExact(acc.StartDate, "yyyy/MM/dd", CultureInfo.InvariantCulture),
-                    EndDate = DateTime.ParseExact(acc.EndDate, "yyyy/MM/dd", CultureInfo.InvariantCulture),
-
-                };
-                await repositoryAccount.AddHolidayt(newAcc);
-
-                return Ok(new { StatusCode = 200, Message = "Add successful", newHolidayId });
+                return Ok(await _departmentHolidayRepository.AddAsync(acc));
             }
             catch (Exception ex)
             {

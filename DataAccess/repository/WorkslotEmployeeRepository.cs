@@ -188,7 +188,8 @@ namespace DataAccess.Repository
                     CheckIn = checkIn,
                     CheckOut = checkOut,
                     Duration = duration,
-                    Status = status
+                    Status = status,
+                    IsOvertime = false
                 });
             }
 

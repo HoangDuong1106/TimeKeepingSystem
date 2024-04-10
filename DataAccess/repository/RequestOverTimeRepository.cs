@@ -102,7 +102,7 @@ namespace DataAccess.Repository
 
             await _dbContext.RequestOverTimes.AddAsync(newRequestOverTime);
 
-            Employee employeeSendRequest = _dbContext.Employees.FirstOrDefault(e => e.Id == employeeId);
+            Employee employeeSendRequest = _dbContext.Employees.Include(e => e.Department).FirstOrDefault(e => e.Id == employeeId);
             if (employeeSendRequest == null)
             {
                 throw new Exception("Employee Send Request Not Found");
@@ -122,7 +122,8 @@ namespace DataAccess.Repository
                 PathAttachmentFile = dto.linkFile ?? "",
                 Reason = dto.reason ?? "",
                 SubmitedDate = DateTime.Now,
-                requestType = RequestType.OverTime
+                requestType = RequestType.OverTime,
+                EmployeeIdLastDecider = employeeSendRequest.Department.ManagerId
             };
 
             // Handle date-specific logic if necessary
@@ -399,6 +400,9 @@ namespace DataAccess.Repository
 
             var manager = await _dbContext.Employees.FirstOrDefaultAsync(e => e.Id == request.EmployeeIdLastDecider);
 
+            // Generate a reverse timestamp key for sorting in Firebase (newer entries first)
+            long reverseTimestamp = DateTime.MaxValue.Ticks - DateTime.UtcNow.Ticks;
+
             var firebaseData = new
             {
                 requestId = request.Id,
@@ -423,7 +427,7 @@ namespace DataAccess.Repository
             var json = JsonSerializer.Serialize(firebaseData);
             var httpClient = new HttpClient();
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var result = await httpClient.PostAsync($"https://nextjs-course-f2de1-default-rtdb.firebaseio.com/{path}.json", content);
+            var result = await httpClient.PostAsync($"https://nextjs-course-f2de1-default-rtdb.firebaseio.com{path}/{reverseTimestamp}.json", content);
 
             return result.IsSuccessStatusCode;
         }

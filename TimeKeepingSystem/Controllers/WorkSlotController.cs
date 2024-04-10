@@ -1,5 +1,6 @@
 
 using BusinessObject.DTO;
+using DataAccess.InterfaceRepository;
 using DataAccess.InterfaceService;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,10 +11,12 @@ namespace TimeKeepingSystem.Controllers
     public class WorkSlotController : ControllerBase
     {
         private readonly IWorkslotService _service;
+        private readonly IWorkslotRepository _repository;
 
-        public WorkSlotController(IWorkslotService service)
+        public WorkSlotController(IWorkslotService service, IWorkslotRepository repository)
         {
             _service = service;
+            _repository = repository;
         }
 
         // GET: api/AttendanceStatus
@@ -26,7 +29,7 @@ namespace TimeKeepingSystem.Controllers
         [HttpGet("get-workslot-of-department-in-one-month")]
         public async Task<List<object>> GetWorkSlotsForDepartment(Guid departmentId, string month)
         {
-            return await _service.GetWorkSlotsForDepartment(new CreateWorkSlotRequest() { departmentId = departmentId, month = month});
+            return await _repository.GetWorkSlotsForDepartment(new CreateWorkSlotRequest() { departmentId = departmentId, month = month});
         }
     }
 }

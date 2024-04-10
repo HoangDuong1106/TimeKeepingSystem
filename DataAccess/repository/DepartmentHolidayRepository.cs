@@ -1,6 +1,7 @@
 ﻿using BusinessObject.DTO;
 using DataAccess.InterfaceRepository;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace DataAccess.Repository
 {
@@ -29,27 +30,28 @@ namespace DataAccess.Repository
             }).ToListAsync();
         }
 
-        public async Task<bool> AddAsync(DepartmentHolidayDTO a)
+        public async Task<object> AddAsync(PostHolidayListDTO acc)
         {
             try
             {
-                await base.AddAsync(new DepartmentHoliday() // have dbSaveChange inside method
+                var newHolidayId = Guid.NewGuid();
+                await _dbContext.DepartmentHolidays.AddAsync(new DepartmentHoliday() // have dbSaveChange inside method
                 {
-                    HolidayId = (Guid)a.HolidayId,
-                    HolidayName = a.HolidayName,
-                    StartDate = a.StartDate,
-                    EndDate = a.EndDate,
-                    Description = a.Description,
-                    IsRecurring = (bool)a.IsRecurring,
-                    IsDeleted = (bool)a.IsDeleted
+                    HolidayId = newHolidayId,
+                    HolidayName = acc.HolidayName,
+                    Description = acc.Description,
+                    IsDeleted = false,
+                    IsRecurring = true,
+                    StartDate = DateTime.ParseExact(acc.StartDate, "yyyy/MM/dd", CultureInfo.InvariantCulture),
+                    EndDate = DateTime.ParseExact(acc.EndDate, "yyyy/MM/dd", CultureInfo.InvariantCulture),
                 });
+
+                return new { message = "Add Holiday Sucessfully", newHolidayId };
             }
             catch (Exception ex)
             {
-                return false;
+                throw new Exception(ex.Message, ex);
             }
-
-            return true;
         }
 
         public async Task<bool> SoftDeleteAsync(Guid id)
