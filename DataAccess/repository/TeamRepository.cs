@@ -93,7 +93,8 @@ namespace DataAccess.Repository
                         FirstName = manager.FirstName,
                         LastName = manager.LastName,
                         RoleName = manager.UserAccount.Role.Name,
-                        RoleId = manager.UserAccount.RoleID
+                        RoleId = manager.UserAccount.RoleID,
+                        Email = manager.Email
                     });
                 }
 
