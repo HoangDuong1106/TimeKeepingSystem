@@ -106,6 +106,13 @@ namespace DataAccess.Repository
             return result;
         }
 
+        public List<DateRangeDTO> getDateRangeOfRequestLeave(RequestLeave requestLeave)
+        {
+            List<DateRangeDTO> dateRange = null;
+            dateRange = requestLeave.WorkslotEmployees.Where(r => r.IsDeleted == false).Select(we => new DateRangeDTO() { title = we.Workslot.DateOfSlot.ToString("yyyy/MM/dd"), type = we.Workslot.IsMorning ? "Morning" : "Afternoon" }).ToList().OrderBy(s => DateTime.ParseExact(s.title, "yyyy/MM/dd", CultureInfo.InvariantCulture)).ToList();
+            return MergeToFullDay(dateRange);
+        }
+
         public object GetRequestLeaveAllEmployee(string? nameSearch, int status, Guid? employeeId = null)
         {
             var result = new List<LeaveRequestDTO>();
@@ -978,6 +985,44 @@ namespace DataAccess.Repository
             return "Request and its leave request have been successfully deleted.";
         }
 
+        public async Task<object> GetCurrentYearLeaveInfo(Guid employeeId, Guid leaveTypeId)
+        {
+            var currentYear = DateTime.Now.Year;
+            var employee = await _dbContext.Employees.Include(e => e.Department).ThenInclude(d => d.WorkTrackSetting).FirstOrDefaultAsync(e => e.Id == employeeId);
+            if (employee == null)
+            {
+                throw new Exception("Employee not found.");
+            }
+
+            var workTrackSetting = employee.Department.WorkTrackSetting;
+            if (workTrackSetting == null)
+            {
+                throw new Exception("WorkTrackSetting not found for the department.");
+            }
+
+            // Parse the MaxDateLeaves JSON string
+            var maxDateLeaves = JsonSerializer.Deserialize<List<MaxDateLeavesDTO>>(workTrackSetting.MaxDateLeaves);
+            var currentYearLeaveInfo = maxDateLeaves.FirstOrDefault(l => l.Year == currentYear)?.LeaveTypeMaxDays[leaveTypeId];
+
+            var approvedLeaves = await _dbContext.Requests
+                .Include(r => r.RequestLeave)
+                .ThenInclude(rl => rl.WorkslotEmployees)
+                .ThenInclude(we => we.Workslot)
+                .Where(r => r.EmployeeSendRequestId == employeeId && r.Status == RequestStatus.Approved && r.RequestLeave.LeaveTypeId == leaveTypeId && r.RequestLeave.FromDate.Year == currentYear)
+                .ToListAsync();
+
+            var totalUsedDays = approvedLeaves.Sum(r => CountNumOfLeaveDate(getDateRangeOfRequestLeave(r.RequestLeave))); // Assuming inclusive dates
+
+            var remainingDays = currentYearLeaveInfo.HasValue ? currentYearLeaveInfo.Value - totalUsedDays : 0;
+
+            return new
+            {
+                StandardLeaveDays = currentYearLeaveInfo,
+                CarryOverDays = 0, // Assuming no carryover for simplicity
+                TotalUsedDays = totalUsedDays,
+                RemainingDays = remainingDays
+            };
+        }
 
     }
 }

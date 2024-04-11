@@ -186,6 +186,19 @@ namespace TimeKeepingSystem.Controllers
                 return BadRequest(e.Message);
             }
         }
+
+        [HttpGet("get-leave-type-info-of-employee-by-id")]
+        public async Task<ActionResult<object>> GetCurrentYearLeaveInfo(Guid employeeId, Guid leaveTypeId)
+        {
+            try
+            {
+                return Ok(await _requestLeaveRepository.GetCurrentYearLeaveInfo(employeeId, leaveTypeId));
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
     }
 }
 
