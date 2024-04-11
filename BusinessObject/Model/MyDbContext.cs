@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
 using System.Data.Common;
+using System.Text.Json;
 
 public class MyDbContext : DbContext
 {
@@ -120,9 +121,9 @@ public class MyDbContext : DbContext
             .HasDefaultValue("FullTime");
 
         modelBuilder.Entity<WorkTrackSetting>()
-        .Property(wts => wts.MaxDateLeaves)
-        .HasDefaultValue("[]") // Ensuring all existing rows will have a default value
-        .IsRequired();
+            .Property(wts => wts.MaxDateLeaves)
+            .HasDefaultValue("[]")
+            .IsRequired();
 
         modelBuilder.Entity<AttendanceStatus>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<Team>().HasQueryFilter(e => !e.IsDeleted);
