@@ -127,6 +127,19 @@ namespace TimeKeepingSystem.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        [HttpGet("get-employee-not-include-in-any-team")]
+        public async Task<ActionResult<List<Employee>>> GetEmployeesNotInAnyTeamAsync()
+        {
+            try
+            {
+                return Ok(await _employeeRepo.GetEmployeesNotInAnyTeamAsync());
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }
 

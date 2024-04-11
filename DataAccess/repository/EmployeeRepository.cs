@@ -309,5 +309,13 @@ namespace DataAccess.Repository
             return duplicateEmailEmployeeIds; // Return the list of employee IDs with duplicate emails
         }
 
+        public async Task<List<Employee>> GetEmployeesNotInAnyTeamAsync()
+        {
+            // Assuming _dbContext is your database context and Employee and Team are your entities
+            return await _dbContext.Employees.Include(e => e.UserAccount).ThenInclude(ua => ua.Role)
+                .Where(employee => employee.DepartmentId == null)  // Assuming DepartmentId links an employee to a team
+                .Where(em => em.UserAccount.Role.Name == "Employee")
+                .ToListAsync();
+        }
     }
 }
