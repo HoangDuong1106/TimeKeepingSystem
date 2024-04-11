@@ -476,7 +476,7 @@ namespace DataAccess.Repository
             var json = JsonSerializer.Serialize(firebaseData);
             var httpClient = new HttpClient();
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var result = await httpClient.PostAsync($"https://nextjs-course-f2de1-default-rtdb.firebaseio.com{path}/{reverseTimestamp}.json", content);
+            var result = await httpClient.PutAsync($"https://nextjs-course-f2de1-default-rtdb.firebaseio.com{path}/{reverseTimestamp}.json", content);
 
             return result.IsSuccessStatusCode;
         }
