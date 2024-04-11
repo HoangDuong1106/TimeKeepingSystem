@@ -10,7 +10,6 @@ namespace BusinessObject.DTO
     {
         public Guid DepartmentId { get; set; }
         public string DepartmentName { get; set; }
-        public Guid ManagerId { get; set; }
         public List<TeamMemberUpdateDTO> Team { get; set; }
     }
 
@@ -18,7 +17,6 @@ namespace BusinessObject.DTO
     {
         public Guid EmployeeId { get; set; }
         public string RoleName { get; set; }
-        public Guid RoleId { get; set; }
     }
 
 }
