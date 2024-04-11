@@ -268,5 +268,46 @@ namespace DataAccess.Repository
             return $"Employee role changed successfully. {employee.FirstName} is now a {employee.UserAccount.Role.Name}.";
         }
 
+        public async Task<List<Guid>> CheckForDuplicateEmailsAndUpdateAsync()
+        {
+            var employees = await _dbContext.Employees
+                                            .Include(e => e.UserAccount)
+                                            .ToListAsync();
+
+            // Initialize a list to store the IDs of employees with duplicate emails
+            List<Guid> duplicateEmailEmployeeIds = new List<Guid>();
+
+            // Get all existing emails to check for duplicates
+            var existingEmails = employees.Where(e => !string.IsNullOrEmpty(e.Email)).Select(e => e.Email).Distinct().ToList();
+
+            foreach (var employee in employees)
+            {
+                if (string.IsNullOrEmpty(employee.Email) && employee.UserAccount != null)
+                {
+                    // Generate the email from the username, checking for existing email suffix
+                    string newEmail = employee.UserAccount.Username.Contains('@')
+                                        ? employee.UserAccount.Username
+                                        : $"{employee.UserAccount.Username}@gmail.com";
+
+                    // Check if the newly generated email already exists in the database
+                    if (existingEmails.Contains(newEmail))
+                    {
+                        // Add the employee's ID to the list of duplicates
+                        duplicateEmailEmployeeIds.Add(employee.Id);
+                    }
+                    else
+                    {
+                        // Update the employee's email and add it to the list of existing emails
+                        employee.Email = newEmail;
+                        existingEmails.Add(newEmail);
+                    }
+                }
+            }
+
+            await _dbContext.SaveChangesAsync(); // Save the changes to the database
+
+            return duplicateEmailEmployeeIds; // Return the list of employee IDs with duplicate emails
+        }
+
     }
 }

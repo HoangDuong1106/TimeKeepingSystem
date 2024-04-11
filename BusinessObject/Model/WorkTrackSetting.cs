@@ -11,20 +11,19 @@ public class WorkTrackSetting
     [AllowNull]
     public Guid? WorkTimeId { get; set; }
     public WorkTimeSetting? WorkTimeSetting { get; set; }
-
     [ForeignKey("WorkDateSetting")]
     [AllowNull]
     public Guid? WorkDateId { get; set; }
     public WorkDateSetting? WorkDateSetting { get; set; }
-
     [ForeignKey("RiskPerfomanceSetting")]
     [AllowNull]
     public Guid? RiskPerfomanceId { get; set; }
     public RiskPerformanceSetting? RiskPerfomanceSetting { get; set; }
-
     [ForeignKey("LeaveSetting")]
     [AllowNull]
     public Guid? LeaveSettingId { get; set; }
     public LeaveSetting? LeaveSetting { get; set; }
+    [Required]
+    public string MaxDateLeaves { get; set; } = "[]";
     public bool IsDeleted { get; set; } = false;  // Soft delete flag
 }

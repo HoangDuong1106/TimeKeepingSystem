@@ -27,5 +27,6 @@ namespace BusinessObject.DTO
         public double? numberOfLeaveDate { get; set; }
         public List<DateRangeDTO?>? dateRange { get; set; }
         public Guid? SupportEmployeeId { get; set; }
+        public Guid? deciderId { get; set; }
     }
 }

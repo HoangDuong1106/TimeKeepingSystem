@@ -1,5 +1,6 @@
 ﻿using BusinessObject.Model;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
 using System.Data.Common;
 
@@ -117,6 +118,11 @@ public class MyDbContext : DbContext
             .IsRequired()
             .HasMaxLength(50)
             .HasDefaultValue("FullTime");
+
+        modelBuilder.Entity<WorkTrackSetting>()
+        .Property(wts => wts.MaxDateLeaves)
+        .HasDefaultValue("[]") // Ensuring all existing rows will have a default value
+        .IsRequired();
 
         modelBuilder.Entity<AttendanceStatus>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<Team>().HasQueryFilter(e => !e.IsDeleted);

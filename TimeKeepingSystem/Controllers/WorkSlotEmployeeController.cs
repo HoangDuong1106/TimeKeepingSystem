@@ -25,19 +25,19 @@ namespace TimeKeepingSystem.Controllers
         [HttpPost("generate-workslot-for-all-employee-in-department")]
         public async Task<object> GenerateWorkSlotEmployee(CreateWorkSlotRequest request)
         {
-            return await _service.GenerateWorkSlotEmployee(request);
+            return await _workslotEmployeeRepository.GenerateWorkSlotEmployee(request);
         }
 
         [HttpGet("get-workslot-employee-by-employee-id")]
         public async Task<object> GetWorkSlotEmployeeByEmployeeId(Guid employeeId)
         {
-            return await _service.GetWorkSlotEmployeeByEmployeeId(employeeId);
+            return await _workslotEmployeeRepository.GetWorkSlotEmployeeByEmployeeId(employeeId);
         }
 
         [HttpGet("get-workslot-employee-by-department-id")]
         public async Task<object> GetWorkSlotEmployeesByDepartmentId(Guid departmentId, string startTime, string endTime)
         {
-            return await _service.GetWorkSlotEmployeesByDepartmentId(departmentId, startTime, endTime);
+            return await _workslotEmployeeRepository.GetWorkSlotEmployeesByDepartmentId(departmentId, startTime, endTime);
         }
 
         [HttpGet("export-excel-file")]
@@ -45,7 +45,7 @@ namespace TimeKeepingSystem.Controllers
         {
             try
             {
-                string relativePath = await _service.ExportWorkSlotEmployeeReport(departmentId);
+                string relativePath = await _workslotEmployeeRepository.ExportWorkSlotEmployeeReport(departmentId);
                 string absolutePath = Path.Combine(Directory.GetCurrentDirectory(), relativePath.TrimStart('.').TrimStart('/'));
                 string fileName = Path.GetFileName(absolutePath);
 
@@ -68,9 +68,9 @@ namespace TimeKeepingSystem.Controllers
                 if (FakecurrentTime != null)
                 {
                     DateTime fakeTime = DateTime.ParseExact(FakecurrentTime, "yyyy,MM,dd,HH,mm,ss", CultureInfo.InvariantCulture);
-                    return Ok(await _service.CheckInWorkslotEmployee(employeeId, fakeTime));
+                    return Ok(await _workslotEmployeeRepository.CheckInWorkslotEmployee(employeeId, fakeTime));
                 }
-                return Ok(await _service.CheckInWorkslotEmployee(employeeId, null));
+                return Ok(await _workslotEmployeeRepository.CheckInWorkslotEmployee(employeeId, null));
             }
             catch (Exception ex)
             {

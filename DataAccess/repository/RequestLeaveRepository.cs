@@ -71,6 +71,10 @@ namespace DataAccess.Repository
         {
 
             var employee = _dbContext.Employees.Where(e => e.IsDeleted == false && e.Id == employeeId).FirstOrDefault();
+            if (employee == null)
+            {
+                throw new Exception("Employee not found");
+            }
             var result = new List<LeaveRequestDTO>();
             var list = _dbContext.Requests.Include(r => r.RequestLeave).ThenInclude(rl => rl.LeaveType).Include(r => r.RequestLeave).ThenInclude(rl => rl.WorkslotEmployees).ThenInclude(we => we.Workslot).Where(r => r.IsDeleted == false)
                  .Where(r => r.EmployeeSendRequestId == employeeId && r.requestType == RequestType.Leave)
@@ -83,6 +87,7 @@ namespace DataAccess.Repository
                 result.Add(new LeaveRequestDTO()
                 {
                     id = r.Id,
+                    employeeId = employeeId,
                     employeeName = employee.FirstName + " " + employee.LastName,
                     startDate = r.RequestLeave.FromDate.ToString("yyyy/MM/dd"),
                     endDate = r.RequestLeave.ToDate.ToString("yyyy/MM/dd"),
@@ -94,6 +99,7 @@ namespace DataAccess.Repository
                     reasonReject = r.Message,
                     linkFile = r.PathAttachmentFile,
                     dateRange = dateRange,
+                    deciderId = r.EmployeeIdLastDecider,
                 });
             });
 
@@ -166,6 +172,7 @@ namespace DataAccess.Repository
                     reasonReject = r.Message,
                     linkFile = r.PathAttachmentFile,
                     numberOfLeaveDate = CountNumOfLeaveDate(dateRange),
+                    deciderId = r.EmployeeIdLastDecider,
                 });
             });
 
@@ -395,6 +402,24 @@ namespace DataAccess.Repository
             };
 
             Employee employeeSendRequest = _dbContext.Employees.Include(e => e.Department).FirstOrDefault(e => e.Id == employeeId);
+
+            // Assuming employeeSendRequest is an object of type Employee
+            var departmentId = employeeSendRequest.DepartmentId;
+            Guid? managerId = null;
+            if (departmentId != null)
+            {
+                var manager = _dbContext.Employees
+                    .Include(e => e.UserAccount)
+                    .ThenInclude(ua => ua.Role)
+                    .Where(e => e.DepartmentId == departmentId && e.UserAccount.Role.Name == "Manager")
+                    .FirstOrDefault();
+
+                // Now manager will be null if there is no manager in the department
+                managerId = manager?.Id; // This will be null if no manager is found
+
+                // Use managerId as needed
+            }
+
             if (employeeSendRequest == null)
             {
                 throw new Exception("Employee Send Request Not Found");
@@ -415,7 +440,7 @@ namespace DataAccess.Repository
                 Reason = dto.reason ?? "",
                 SubmitedDate = DateTime.Now,
                 requestType = RequestType.Leave,
-                EmployeeIdLastDecider = employeeSendRequest.Department.ManagerId,
+                EmployeeIdLastDecider = managerId,
             };
 
             List<WorkslotEmployee> newWorkslotEmployees = new List<WorkslotEmployee>();

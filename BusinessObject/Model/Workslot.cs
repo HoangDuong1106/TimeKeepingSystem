@@ -11,7 +11,6 @@ public class Workslot
     public DateTime DateOfSlot { get; set; }
     public string? FromHour { get; set; }
     public string? ToHour { get; set; }
-
     [ForeignKey("Team")]
     [AllowNull]
     public Guid? DepartmentId { get; set; }

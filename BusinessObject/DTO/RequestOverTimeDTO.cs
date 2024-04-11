@@ -24,5 +24,6 @@ namespace BusinessObject.DTO
         public string? submitDate { get; set; }
         public string? workingStatus { get; set; }
         public string? reasonReject { get; set; }
+        public Guid? deciderId { get; set; }
     }
 }

@@ -122,6 +122,19 @@ namespace TimeKeepingSystem.Controllers
                 return BadRequest(e.Message);
             }
         }
+
+        [HttpPatch("reject-request-over-time")]
+        public async Task<ActionResult<object>> RejectOvertimeRequest(RequestReasonDTO requestObj)
+        {
+            try
+            {
+                return Ok(await _requestOverTimeRepository.RejectOvertimeRequest(requestObj));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }
 

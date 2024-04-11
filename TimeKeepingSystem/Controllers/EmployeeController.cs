@@ -114,6 +114,19 @@ namespace TimeKeepingSystem.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        [HttpPatch("create-email-from-username-for-nonexisting-email-employee")]
+        public async Task<ActionResult<List<Guid>>> CheckForDuplicateEmailsAndUpdateAsync()
+        {
+            try
+            {
+                return Ok(await _employeeRepo.CheckForDuplicateEmailsAndUpdateAsync());
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }
 

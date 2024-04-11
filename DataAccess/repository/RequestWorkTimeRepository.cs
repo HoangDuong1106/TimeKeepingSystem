@@ -95,10 +95,27 @@ namespace DataAccess.Repository
                 throw new Exception("Employee Send Request Not Found");
             }
 
+            // Assuming employeeSendRequest is an object of type Employee
+            var departmentId = employeeSendRequest.DepartmentId;
+            Guid? managerId = null;
+            if (departmentId != null)
+            {
+                var manager = _dbContext.Employees
+                    .Include(e => e.UserAccount)
+                    .ThenInclude(ua => ua.Role)
+                    .Where(e => e.DepartmentId == departmentId && e.UserAccount.Role.Name == "Manager")
+                    .FirstOrDefault();
+
+                // Now manager will be null if there is no manager in the department
+                managerId = manager?.Id; // This will be null if no manager is found
+
+                // Use managerId as needed
+            }
+            var requestId = Guid.NewGuid();
             // Initialize new Request object
             Request newRequest = new Request()
             {
-                Id = Guid.NewGuid(),
+                Id = requestId,
                 EmployeeSendRequestId = employeeId,
                 EmployeeSendRequest = employeeSendRequest,
                 Status = RequestStatus.Pending,  // default status
@@ -109,12 +126,14 @@ namespace DataAccess.Repository
                 PathAttachmentFile = dto.linkFile ?? "",
                 Reason = dto.reason ?? "",
                 SubmitedDate = DateTime.Now,
-                requestType = RequestType.WorkTime
+                requestType = RequestType.WorkTime,
+                EmployeeIdLastDecider = managerId,
             };
 
             // Add the new Request and RequestWorkTime to the database and save changes
             await _dbContext.Requests.AddAsync(newRequest);
             await _dbContext.SaveChangesAsync();
+            await SendRequestWorkTimeToManagerFirebase(requestId);
 
             return new
             {
@@ -544,6 +563,7 @@ namespace DataAccess.Repository
 
             // Step 4: Save changes to the database
             await _dbContext.SaveChangesAsync();
+            await SendRequestWorkTimeToEmployeeFirebase(requestId);
 
             return new { message = "RequestWorkTime approved and WorkslotEmployee updated successfully" };
         }
@@ -575,6 +595,64 @@ namespace DataAccess.Repository
             var httpClient = new HttpClient();
             var content = new StringContent(json, Encoding.UTF8, "application/json");
             var result = await httpClient.PostAsync("https://nextjs-course-f2de1-default-rtdb.firebaseio.com/workTimeRequests.json", content);
+
+            return result.IsSuccessStatusCode;
+        }
+
+        public async Task<bool> SendRequestWorkTimeToManagerFirebase(Guid requestId)
+        {
+            string managerPath = "/managerNoti";
+            return await SendWorkTimeRequestStatusToFirebase(requestId, managerPath);
+        }
+
+        public async Task<bool> SendRequestWorkTimeToEmployeeFirebase(Guid requestId)
+        {
+            string employeePath = "/employeeNoti";
+            return await SendWorkTimeRequestStatusToFirebase(requestId, employeePath);
+        }
+
+        public async Task<bool> SendWorkTimeRequestStatusToFirebase(Guid requestId, string path)
+        {
+            var request = await _dbContext.Requests
+                .Include(r => r.RequestWorkTime)
+                .FirstOrDefaultAsync(r => r.Id == requestId);
+
+            if (request == null)
+            {
+                return false; // Request not found
+            }
+
+            var manager = await _dbContext.Employees.FirstOrDefaultAsync(e => e.Id == request.EmployeeIdLastDecider);
+
+            // Generate a reverse timestamp key for sorting in Firebase (newer entries first)
+            long reverseTimestamp = DateTime.MaxValue.Ticks - DateTime.UtcNow.Ticks;
+
+            var firebaseData = new
+            {
+                requestId = request.Id,
+                employeeSenderId = request.EmployeeSendRequestId,
+                employeeSenderName = request.EmployeeSendRequest?.FirstName + " " + request.EmployeeSendRequest?.LastName,
+                employeeDeciderId = request.EmployeeIdLastDecider,
+                employeeDeciderName = manager?.FirstName + " " + manager?.LastName,
+                workTimeId = request.RequestWorkTimeId,
+                status = request.Status.ToString(),
+                reason = request.Reason,
+                messageOfDecider = request.Message,
+                submitedDate = request.SubmitedDate,
+                dateOfWorkTime = request.RequestWorkTime?.DateOfSlot,
+                realHourStart = request.RequestWorkTime?.RealHourStart,
+                realHourEnd = request.RequestWorkTime?.RealHourEnd,
+                actionDate = DateTime.Now,
+                requestType = "Work Time",
+                isSeen = false
+            };
+
+            var json = JsonSerializer.Serialize(firebaseData);
+            var httpClient = new HttpClient();
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            // Append the reverse timestamp key to the path to ensure ordering
+            var result = await httpClient.PutAsync($"https://nextjs-course-f2de1-default-rtdb.firebaseio.com{path}/{reverseTimestamp}.json", content);
 
             return result.IsSuccessStatusCode;
         }

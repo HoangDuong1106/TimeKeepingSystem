@@ -46,6 +46,10 @@ namespace DataAccess.Repository
         public object GetRequestOverTimeOfEmployeeById(Guid employeeId)
         {
             var employee = _dbContext.Employees.Where(e => e.IsDeleted == false && e.Id == employeeId).FirstOrDefault();
+            if (employee == null)
+            {
+                throw new Exception("Employee not found");
+            }
             var result = new List<object>();
             var list = _dbContext.Requests.Include(r => r.RequestOverTime).Where(r => r.IsDeleted == false)
                  .Where(r => r.EmployeeSendRequestId == employeeId && r.requestType == RequestType.OverTime)
@@ -55,6 +59,8 @@ namespace DataAccess.Repository
                 result.Add(new RequestOverTimeDTO()
                 {
                     id = r.Id,
+                    employeeId = employeeId,
+                    employeeName = employee.FirstName + " " + employee.LastName,
                     RequestOverTimeId = r.RequestOverTimeId,
                     Name = r.RequestOverTime?.Name ?? "",
                     Date = r.RequestOverTime.DateOfOverTime.ToString("yyyy/MM/dd"),
@@ -67,6 +73,7 @@ namespace DataAccess.Repository
                     linkFile = r.PathAttachmentFile,
                     status = _dbContext.WorkingStatuses.FirstOrDefault(ws => ws.Id == r.RequestOverTime.WorkingStatusId)?.Name ?? "",
                     workingStatusId = r.RequestOverTime.WorkingStatusId,
+                    deciderId = r.EmployeeIdLastDecider,
                     IsDeleted = r.IsDeleted
                 });
             });
@@ -107,6 +114,24 @@ namespace DataAccess.Repository
             {
                 throw new Exception("Employee Send Request Not Found");
             }
+
+            // Assuming employeeSendRequest is an object of type Employee
+            var departmentId = employeeSendRequest.DepartmentId;
+            Guid? managerId = null;
+            if (departmentId != null)
+            {
+                var manager = _dbContext.Employees
+                    .Include(e => e.UserAccount)
+                    .ThenInclude(ua => ua.Role)
+                    .Where(e => e.DepartmentId == departmentId && e.UserAccount.Role.Name == "Manager")
+                    .FirstOrDefault();
+
+                // Now manager will be null if there is no manager in the department
+                managerId = manager?.Id; // This will be null if no manager is found
+
+                // Use managerId as needed
+            }
+
             Guid newRequestId = Guid.NewGuid();
             // Initialize new Request and RequestOvertime objects
             Request newRequest = new Request()
@@ -123,7 +148,7 @@ namespace DataAccess.Repository
                 Reason = dto.reason ?? "",
                 SubmitedDate = DateTime.Now,
                 requestType = RequestType.OverTime,
-                EmployeeIdLastDecider = employeeSendRequest.Department.ManagerId
+                EmployeeIdLastDecider = managerId
             };
 
             // Handle date-specific logic if necessary
@@ -304,7 +329,8 @@ namespace DataAccess.Repository
                     status = r.Status.ToString(),
                     linkFile = r.PathAttachmentFile ?? "",
                     reason = r.Reason,
-                    reasonReject = r.Message
+                    reasonReject = r.Message,
+                    deciderId = r.EmployeeIdLastDecider,
                 });
             });
 
@@ -393,7 +419,6 @@ namespace DataAccess.Repository
 
             return new { message = "Overtime request Deleted successfully." };
         }
-
 
         public async Task<bool> SendRequestOvertimeToManagerFirebase(Guid requestId)
         {
@@ -527,6 +552,44 @@ namespace DataAccess.Repository
             await SendRequestOvertimeToEmployeeFirebase(requestId);
 
             return new { message = "Overtime request approved successfully" };
+        }
+
+        public async Task<object> RejectOvertimeRequest(RequestReasonDTO requestObj)
+        {
+            Guid requestId = requestObj.requestId;
+            string reason = requestObj.reason;
+
+            // Retrieve the request by requestId
+            var request = await _dbContext.Requests
+                                           .Include(r => r.RequestOverTime)
+                                           .FirstOrDefaultAsync(r => r.Id == requestId);
+
+            if (request == null)
+            {
+                throw new Exception("RequestId not found.");
+            }
+
+            if (request.RequestOverTime == null)
+            {
+                throw new Exception("Request Overtime not found.");
+            }
+
+            // No need to check for past dates for overtime, but ensure it's not already processed
+            if (request.Status == RequestStatus.Approved || request.Status == RequestStatus.Rejected)
+            {
+                throw new Exception("Overtime request cannot be rejected after being Approved or Rejected.");
+            }
+
+            // Set the Request status to Rejected based on your application logic
+            request.Status = RequestStatus.Rejected;
+            request.Message = reason;
+            request.EmployeeIdLastDecider = requestObj.employeeIdDecider;
+
+            // Save the changes to the database
+            await _dbContext.SaveChangesAsync();
+            await SendRequestOvertimeToEmployeeFirebase(requestId); // Assuming you have similar notification sending method
+
+            return new { message = "Overtime request rejected successfully." };
         }
 
     }
