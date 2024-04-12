@@ -9,13 +9,11 @@ namespace DataAccess.Repository
     public class WorkslotRepository : Repository<Workslot>, IWorkslotRepository
     {
         private readonly MyDbContext _dbContext;
-        private readonly IDepartmentHolidayRepository _holidayRepository;
 
-        public WorkslotRepository(MyDbContext context, IDepartmentHolidayRepository holidayRepository) : base(context)
+        public WorkslotRepository(MyDbContext context) : base(context)
         {
             // You can add more specific methods here if needed
             _dbContext = context;
-            _holidayRepository = holidayRepository;
         }
 
         public async Task<bool> SoftDeleteAsync(Guid id)
@@ -61,7 +59,7 @@ namespace DataAccess.Repository
             {
                 string dayOfWeek = date.DayOfWeek.ToString();
                 bool isWorkDay = (bool)typeof(DateStatusDTO).GetProperty(dayOfWeek).GetValue(workDays);
-                bool isHoliday = await _holidayRepository.IsHoliday(_dbContext, date.ToString("yyyy/MM/dd"));
+                bool isHoliday = await IsHoliday(_dbContext, date.ToString("yyyy/MM/dd"));
 
                 if (isWorkDay && !isHoliday)
                 {
@@ -192,7 +190,7 @@ namespace DataAccess.Repository
             {
                 string dayOfWeek = date.DayOfWeek.ToString();
                 bool isWorkDay = (bool)typeof(DateStatusDTO).GetProperty(dayOfWeek).GetValue(workDays);
-                bool isHoliday = await _holidayRepository.IsHoliday(_dbContext, date.ToString("yyyy/MM/dd"));
+                bool isHoliday = await IsHoliday(_dbContext, date.ToString("yyyy/MM/dd"));
 
                 var slotsForDate = workSlots.Where(ws => ws.DateOfSlot.Date == date.Date).ToList();
 
@@ -247,6 +245,26 @@ namespace DataAccess.Repository
             }
 
             return response;
+        }
+
+        public async Task<bool> IsHoliday(MyDbContext dbContext, string dateString)
+        {
+            // Parse the date from the string
+            DateTime date;
+            try
+            {
+                date = DateTime.ParseExact(dateString, "yyyy/MM/dd", CultureInfo.InvariantCulture);
+            }
+            catch (FormatException)
+            {
+                throw new ArgumentException("Invalid date format. Please use 'yyyy/MM/dd'.");
+            }
+
+            // Check if the date is a holiday in any department
+            var isHoliday = await dbContext.DepartmentHolidays
+                                           .AnyAsync(h => h.StartDate <= date && h.EndDate >= date && !h.IsDeleted);
+
+            return isHoliday;
         }
     }
 }

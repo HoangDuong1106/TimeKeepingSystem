@@ -2,17 +2,20 @@
 using DataAccess.InterfaceRepository;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
+using System.Transactions;
 
 namespace DataAccess.Repository
 {
     public class DepartmentHolidayRepository : Repository<DepartmentHoliday>, IDepartmentHolidayRepository
     {
         private readonly MyDbContext _dbContext;
+        private readonly IWorkslotRepository _workslotRepository;
 
-        public DepartmentHolidayRepository(MyDbContext context) : base(context)
+        public DepartmentHolidayRepository(MyDbContext context, IWorkslotRepository workslotRepository) : base(context)
         {
             // You can add more specific methods here if needed
             _dbContext = context;
+            _workslotRepository = workslotRepository;
         }
 
         public async Task<List<DepartmentHolidayDTO>> GetAllAsync()
@@ -82,37 +85,57 @@ namespace DataAccess.Repository
             }
         }
 
-        public async Task<bool> IsHoliday(MyDbContext dbContext, string dateString)
-        {
-            // Parse the date from the string
-            DateTime date;
-            try
-            {
-                date = DateTime.ParseExact(dateString, "yyyy/MM/dd", CultureInfo.InvariantCulture);
-            }
-            catch (FormatException)
-            {
-                throw new ArgumentException("Invalid date format. Please use 'yyyy/MM/dd'.");
-            }
-
-            // Check if the date is a holiday in any department
-            var isHoliday = await dbContext.DepartmentHolidays
-                                           .AnyAsync(h => h.StartDate <= date && h.EndDate >= date && !h.IsDeleted);
-
-            return isHoliday;
-        }
-
-        public async Task<bool> SoftDeleteAsync(Guid id)
+        public async Task<bool> SoftDelete(Guid[] holidayIds)
         {
             try
             {
-                await base.SoftDeleteAsync(id);
+                foreach (Guid holidayId in holidayIds)
+                {
+                    var holiday = await _dbContext.DepartmentHolidays.FindAsync(holidayId);
+                    if (holiday == null) throw new Exception("Holiday not found.");
+
+                    // Soft delete the holiday
+                    holiday.IsDeleted = true;
+                    _dbContext.DepartmentHolidays.Update(holiday);
+                    await _dbContext.SaveChangesAsync();
+
+                    // Get all unique department IDs
+                    var departmentIds = await _dbContext.Departments.Select(d => d.Id).ToListAsync();
+
+                    // Extract start and end months
+                    var startMonth = new DateTime(holiday.StartDate.Year, holiday.StartDate.Month, 1);
+                    var endMonth = new DateTime(holiday.EndDate.Year, holiday.EndDate.Month, 1);
+
+                    // Process each department and each month sequentially
+                    var monthsToRegenerate = Enumerable.Range(0, (endMonth.Year - startMonth.Year) * 12 + endMonth.Month - startMonth.Month + 1)
+                                                       .Select(offset => startMonth.AddMonths(offset)).ToList();
+
+                    foreach (var deptId in departmentIds)
+                    {
+                        foreach (var month in monthsToRegenerate)
+                        {
+                            await RegenerateWorkSlotsForDepartment(deptId, month);
+                        }
+                    }
+                }
+                return true;
             }
             catch (Exception ex)
             {
-                return false;
+                // Log and handle exceptions
+                throw new Exception("Error during holiday deletion and slot regeneration: " + ex.Message);
             }
-            return true;
         }
+
+        private async Task RegenerateWorkSlotsForDepartment(Guid departmentId, DateTime month)
+        {
+            var request = new CreateWorkSlotRequest
+            {
+                departmentId = departmentId,
+                month = month.ToString("yyyy/MM/dd")
+            };
+            await _workslotRepository.GenerateWorkSlotsForMonth(request);
+        }
+
     }
 }

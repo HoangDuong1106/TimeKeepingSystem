@@ -94,22 +94,16 @@ namespace TimeKeepingSystem.Controllers
         }
 
         [HttpDelete]
-
         public async Task<IActionResult> Delete(Guid[] id)
         {
             try
             {
-                foreach (Guid departmentId in id)
-                {
-                    await HolidayDAO.DeleteHoliday(departmentId);
-                }
-                return Ok(new { StatusCode = 200, Message = "Delete successful" });
+                return Ok(await _departmentHolidayRepository.SoftDelete(id));
             }
             catch (Exception ex)
             {
                 return StatusCode(409, new { StatusCode = 409, Message = ex.Message });
             }
-
 
         }
     }
