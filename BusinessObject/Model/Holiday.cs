@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 
 
-public class DepartmentHoliday
+public class Holiday
 {
     [Key]
     public Guid HolidayId { get; set; }

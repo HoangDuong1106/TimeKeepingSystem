@@ -6,9 +6,9 @@ public class DepartmentHolidayException
     [Key]
     public Guid ExceptionId { get; set; }
 
-    [ForeignKey("DepartmentHoliday")]
+    [ForeignKey("Holiday")]
     public Guid HolidayId { get; set; }
-    public DepartmentHoliday DepartmentHoliday { get; set; }
+    public Holiday DepartmentHoliday { get; set; }
 
     [Required]
     public DateTime ExceptionDate { get; set; }

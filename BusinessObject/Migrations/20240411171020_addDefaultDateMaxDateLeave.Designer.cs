@@ -73,7 +73,7 @@ namespace BusinessObject.Migrations
                     b.ToTable("Wifis");
                 });
 
-            modelBuilder.Entity("DepartmentHoliday", b =>
+            modelBuilder.Entity("Holiday", b =>
                 {
                     b.Property<Guid>("HolidayId")
                         .ValueGeneratedOnAdd()
@@ -772,13 +772,13 @@ namespace BusinessObject.Migrations
 
             modelBuilder.Entity("DepartmentHolidayException", b =>
                 {
-                    b.HasOne("DepartmentHoliday", "DepartmentHoliday")
+                    b.HasOne("Holiday", "Holiday")
                         .WithMany()
                         .HasForeignKey("HolidayId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("DepartmentHoliday");
+                    b.Navigation("Holiday");
                 });
 
             modelBuilder.Entity("Employee", b =>

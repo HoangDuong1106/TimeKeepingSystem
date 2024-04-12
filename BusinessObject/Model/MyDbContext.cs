@@ -18,7 +18,7 @@ public class MyDbContext : DbContext
     public DbSet<UserAccount> UserAccounts { get; set; }
     public DbSet<Role> Roles { get; set; }
     public DbSet<RiskPerformanceEmployee> RiskPerformanceEmployees { get; set; }
-    public DbSet<DepartmentHoliday> DepartmentHolidays { get; set; }
+    public DbSet<Holiday> DepartmentHolidays { get; set; }
     public DbSet<DepartmentHolidayException> DepartmentHolidayExceptions { get; set; }
     public DbSet<AttendanceStatus> AttendanceStatuses { get; set; }
     public DbSet<Team> Departments { get; set; }
@@ -127,7 +127,7 @@ public class MyDbContext : DbContext
 
         modelBuilder.Entity<AttendanceStatus>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<Team>().HasQueryFilter(e => !e.IsDeleted);
-        modelBuilder.Entity<DepartmentHoliday>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<Holiday>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<DepartmentHolidayException>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<Employee>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<LeaveSetting>().HasQueryFilter(e => !e.IsDeleted);

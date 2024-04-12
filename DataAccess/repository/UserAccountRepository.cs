@@ -28,8 +28,8 @@ namespace DataAccess.Repository
 
         public Task<object> GetHolidays() => HolidayDAO.GetHolidays();
         public Task DeleteHoliday(Guid m) => HolidayDAO.DeleteHoliday(m);
-        public Task AddHolidayt(DepartmentHoliday m) => HolidayDAO.AddHoliday(m);
-        public Task UpdateHoliday(DepartmentHoliday m) => HolidayDAO.UpdateHoliday(m);
+        public Task AddHolidayt(Holiday m) => HolidayDAO.AddHoliday(m);
+        public Task UpdateHoliday(Holiday m) => HolidayDAO.UpdateHoliday(m);
 
         public Task<object> GetWorkTrackSettings() => WorkTrackSettingDAO.GetWorkTrackSettings();
         public Task DeleteWorkTrackSetting(Guid m) => WorkTrackSettingDAO.DeleteWorkTrackSetting(m);

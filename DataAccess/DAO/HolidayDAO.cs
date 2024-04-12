@@ -48,7 +48,7 @@ namespace DataAccess.DAO
 
 
 
-        public static async Task AddHoliday(DepartmentHoliday m)
+        public static async Task AddHoliday(Holiday m)
         {
             try
             {
@@ -66,7 +66,7 @@ namespace DataAccess.DAO
             }
         }
 
-        public static async Task UpdateHoliday(DepartmentHoliday m)
+        public static async Task UpdateHoliday(Holiday m)
         {
             try
             {

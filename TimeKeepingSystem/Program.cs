@@ -79,7 +79,7 @@ builder.Services.AddSwaggerGen();
 // Register repository classes
 builder.Services.AddScoped<IRepository<AttendanceStatus>, AttendanceStatusRepository>();
 builder.Services.AddScoped<IRepository<Team>, TeamRepository>();
-builder.Services.AddScoped<IRepository<DepartmentHoliday>, DepartmentHolidayRepository>();
+builder.Services.AddScoped<IRepository<Holiday>, HolidayRepository>();
 builder.Services.AddScoped<IRepository<DepartmentHolidayException>, DepartmentHolidayExceptionRepository>();
 builder.Services.AddScoped<IRepository<Employee>, EmployeeRepository>();
 builder.Services.AddScoped<IRepository<LeaveSetting>, LeaveSettingRepository>();
@@ -101,7 +101,7 @@ builder.Services.AddScoped<IRepository<Wifi>, WifiRepository>();
 
 builder.Services.AddScoped<IAttendanceStatusRepository, AttendanceStatusRepository>();
 builder.Services.AddScoped<IDepartmentHolidayExceptionRepository, DepartmentHolidayExceptionRepository>();
-builder.Services.AddScoped<IDepartmentHolidayRepository, DepartmentHolidayRepository>();
+builder.Services.AddScoped<IHolidayRepository, HolidayRepository>();
 builder.Services.AddScoped<ITeamRepository, TeamRepository>();
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 builder.Services.AddScoped<ILeaveSettingRepository, LeaveSettingRepository>();

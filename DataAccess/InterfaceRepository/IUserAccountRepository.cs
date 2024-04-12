@@ -29,8 +29,8 @@ namespace DataAccess.InterfaceRepository
         Task<object> GetHolidays();
 
         Task DeleteHoliday(Guid m);
-        Task UpdateHoliday(DepartmentHoliday m);
-        Task AddHolidayt(DepartmentHoliday m);
+        Task UpdateHoliday(Holiday m);
+        Task AddHolidayt(Holiday m);
 
         Task<object> GetWorkTrackSettings();
 

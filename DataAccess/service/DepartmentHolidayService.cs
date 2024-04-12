@@ -10,9 +10,9 @@ namespace DataAccess.Service
 {
     public class DepartmentHolidayService : IDepartmentHolidayService
     {
-        private readonly IDepartmentHolidayRepository _DepartmentHolidayRepository;
+        private readonly IHolidayRepository _DepartmentHolidayRepository;
 
-        public DepartmentHolidayService(IDepartmentHolidayRepository DepartmentHolidayRepository)
+        public DepartmentHolidayService(IHolidayRepository DepartmentHolidayRepository)
         {
             _DepartmentHolidayRepository = DepartmentHolidayRepository;
         }

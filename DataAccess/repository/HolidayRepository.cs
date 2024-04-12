@@ -6,12 +6,12 @@ using System.Transactions;
 
 namespace DataAccess.Repository
 {
-    public class DepartmentHolidayRepository : Repository<DepartmentHoliday>, IDepartmentHolidayRepository
+    public class HolidayRepository : Repository<Holiday>, IHolidayRepository
     {
         private readonly MyDbContext _dbContext;
         private readonly IWorkslotRepository _workslotRepository;
 
-        public DepartmentHolidayRepository(MyDbContext context, IWorkslotRepository workslotRepository) : base(context)
+        public HolidayRepository(MyDbContext context, IWorkslotRepository workslotRepository) : base(context)
         {
             // You can add more specific methods here if needed
             _dbContext = context;
@@ -40,7 +40,7 @@ namespace DataAccess.Repository
                 using (var transaction = _dbContext.Database.BeginTransaction())
                 {
                     var newHolidayId = Guid.NewGuid();
-                    var newHoliday = new DepartmentHoliday()
+                    var newHoliday = new Holiday()
                     {
                         HolidayId = newHolidayId,
                         HolidayName = acc.HolidayName,
@@ -96,7 +96,7 @@ namespace DataAccess.Repository
 
                     // Soft delete the holiday
                     holiday.IsDeleted = true;
-                    _dbContext.DepartmentHolidays.Update(holiday);
+                    _dbContext.DepartmentHolidays.Remove(holiday);
                     await _dbContext.SaveChangesAsync();
 
                     // Get all unique department IDs

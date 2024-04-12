@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BusinessObject.Migrations
 {
     [DbContext(typeof(MyDbContext))]
-    [Migration("20240411105040_AddMaxDateLeavesToWorkTrackSetting")]
-    partial class AddMaxDateLeavesToWorkTrackSetting
+    [Migration("20240412175519_changeNameHolidayTable")]
+    partial class changeNameHolidayTable
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -71,39 +71,6 @@ namespace BusinessObject.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Wifis");
-                });
-
-            modelBuilder.Entity("Holiday", b =>
-                {
-                    b.Property<Guid>("HolidayId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTime>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("HolidayName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsRecurring")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("HolidayId");
-
-                    b.ToTable("DepartmentHolidays");
                 });
 
             modelBuilder.Entity("DepartmentHolidayException", b =>
@@ -193,6 +160,39 @@ namespace BusinessObject.Migrations
                     b.HasIndex("DepartmentId");
 
                     b.ToTable("Employees");
+                });
+
+            modelBuilder.Entity("Holiday", b =>
+                {
+                    b.Property<Guid>("HolidayId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("HolidayName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRecurring")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("HolidayId");
+
+                    b.ToTable("DepartmentHolidays");
                 });
 
             modelBuilder.Entity("LeaveSetting", b =>
@@ -772,13 +772,13 @@ namespace BusinessObject.Migrations
 
             modelBuilder.Entity("DepartmentHolidayException", b =>
                 {
-                    b.HasOne("Holiday", "Holiday")
+                    b.HasOne("Holiday", "DepartmentHoliday")
                         .WithMany()
                         .HasForeignKey("HolidayId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Holiday");
+                    b.Navigation("DepartmentHoliday");
                 });
 
             modelBuilder.Entity("Employee", b =>

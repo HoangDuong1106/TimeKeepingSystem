@@ -23,8 +23,8 @@ namespace TimeKeepingSystem.Controllers
     {
         private readonly IUserAccountRepository repositoryAccount;
         private readonly IConfiguration configuration;
-        private readonly IDepartmentHolidayRepository _departmentHolidayRepository;
-        public HolidayController(IUserAccountRepository _repositoryAccount, IConfiguration configuration, IDepartmentHolidayRepository departmentHolidayRepository)
+        private readonly IHolidayRepository _departmentHolidayRepository;
+        public HolidayController(IUserAccountRepository _repositoryAccount, IConfiguration configuration, IHolidayRepository departmentHolidayRepository)
         {
             repositoryAccount = _repositoryAccount;
             this.configuration = configuration;
@@ -73,7 +73,7 @@ namespace TimeKeepingSystem.Controllers
             try
             {
                 Guid id = Guid.NewGuid();
-                var newAcc = new DepartmentHoliday
+                var newAcc = new Holiday
                 {
                     HolidayId = (Guid)acc.HolidayId,
                     HolidayName = acc.HolidayName,
