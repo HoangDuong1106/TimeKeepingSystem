@@ -97,6 +97,61 @@ namespace DataAccess.Repository
             return workSlots;
         }
 
+        public async Task<int> RemoveDuplicateWorkSlots()
+        {
+            using (var transaction = _dbContext.Database.BeginTransaction())
+            {
+                try
+                {
+                    // Fetch all work slots
+                    var workSlots = await _dbContext.Workslots.ToListAsync();
+
+                    // Identify duplicates based on full criteria
+                    var duplicatesFullCriteria = workSlots.GroupBy(ws => new { ws.Name, ws.DateOfSlot, ws.FromHour, ws.ToHour, ws.DepartmentId, ws.IsMorning })
+                                                          .Where(g => g.Count() > 1)
+                                                          .SelectMany(g => g.OrderBy(ws => ws.Id).Skip(1))  // Skip the first item as it's the original
+                                                          .ToList();
+
+                    // Identify duplicates based on Name and DepartmentId only
+                    var duplicatesNameDepartment = workSlots.GroupBy(ws => new { ws.Name, ws.DepartmentId })
+                                                             .Where(g => g.Count() > 1)
+                                                             .SelectMany(g => g.OrderBy(ws => ws.Id).Skip(1))  // Skip the first item as it's the original
+                                                             .ToList();
+
+                    // Combine both sets of duplicates
+                    var allDuplicates = duplicatesFullCriteria.Concat(duplicatesNameDepartment)
+                                                              .Distinct()
+                                                              .ToList();
+
+                    // Find all WorkslotEmployee entries that are associated with the duplicate work slots
+                    var workslotEmployeeIds = _dbContext.WorkslotEmployees
+                                                        .Where(we => allDuplicates.Select(d => d.Id).Contains(we.WorkslotId))
+                                                        .ToList();
+
+                    // Remove WorkslotEmployee entries
+                    _dbContext.WorkslotEmployees.RemoveRange(workslotEmployeeIds);
+
+                    // Remove the duplicate work slots
+                    _dbContext.Workslots.RemoveRange(allDuplicates);
+
+                    // Save changes to the database
+                    int changes = await _dbContext.SaveChangesAsync();
+
+                    // Commit transaction if all commands succeed
+                    transaction.Commit();
+
+                    return changes;  // Return the number of changes made to the database
+                }
+                catch (Exception)
+                {
+                    // Rollback the transaction if an exception occurs
+                    transaction.Rollback();
+                    throw;  // Rethrow the exception to handle it further up the call stack if necessary
+                }
+            }
+        }
+
+
         public async Task<List<object>> GetWorkSlotsForDepartment(CreateWorkSlotRequest request)
         {
             List<object> response = new List<object>();

@@ -23,13 +23,19 @@ namespace TimeKeepingSystem.Controllers
         [HttpPost("generate-workslot-of-department-in-one-month")]
         public async Task<List<Workslot>> GenerateWorkSlotsForMonth(CreateWorkSlotRequest request)
         {
-            return await _service.GenerateWorkSlotsForMonth(request);
+            return await _repository.GenerateWorkSlotsForMonth(request);
         }
 
         [HttpGet("get-workslot-of-department-in-one-month")]
         public async Task<List<object>> GetWorkSlotsForDepartment(Guid departmentId, string month)
         {
             return await _repository.GetWorkSlotsForDepartment(new CreateWorkSlotRequest() { departmentId = departmentId, month = month});
+        }
+
+        [HttpDelete("delete-duplicate-workslot")]
+        public async Task<ActionResult<int>> RemoveDuplicateWorkSlots()
+        {
+            return await _repository.RemoveDuplicateWorkSlots();
         }
     }
 }
