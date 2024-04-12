@@ -34,24 +34,72 @@ namespace DataAccess.Repository
         {
             try
             {
-                var newHolidayId = Guid.NewGuid();
-                await _dbContext.DepartmentHolidays.AddAsync(new DepartmentHoliday() // have dbSaveChange inside method
+                using (var transaction = _dbContext.Database.BeginTransaction())
                 {
-                    HolidayId = newHolidayId,
-                    HolidayName = acc.HolidayName,
-                    Description = acc.Description,
-                    IsDeleted = false,
-                    IsRecurring = true,
-                    StartDate = DateTime.ParseExact(acc.StartDate, "yyyy/MM/dd", CultureInfo.InvariantCulture),
-                    EndDate = DateTime.ParseExact(acc.EndDate, "yyyy/MM/dd", CultureInfo.InvariantCulture),
-                });
+                    var newHolidayId = Guid.NewGuid();
+                    var newHoliday = new DepartmentHoliday()
+                    {
+                        HolidayId = newHolidayId,
+                        HolidayName = acc.HolidayName,
+                        Description = acc.Description,
+                        IsDeleted = false,
+                        IsRecurring = true,
+                        StartDate = DateTime.ParseExact(acc.StartDate, "yyyy/MM/dd", CultureInfo.InvariantCulture),
+                        EndDate = DateTime.ParseExact(acc.EndDate, "yyyy/MM/dd", CultureInfo.InvariantCulture),
+                    };
 
-                return new { message = "Add Holiday Sucessfully", newHolidayId };
+                    // Add the new holiday
+                    await _dbContext.DepartmentHolidays.AddAsync(newHoliday);
+
+                    // Fetch and delete work slots that fall within the holiday's date range for the relevant department(s)
+                    var workSlotsToDelete = _dbContext.Workslots
+                        .Where(ws => ws.DateOfSlot >= newHoliday.StartDate && ws.DateOfSlot <= newHoliday.EndDate)
+                        .ToList();
+
+                    // Find all associated WorkslotEmployee entries
+                    var workslotEmployeeIds = _dbContext.WorkslotEmployees
+                                                        .Where(we => workSlotsToDelete.Select(ws => ws.Id).Contains(we.WorkslotId))
+                                                        .ToList();
+
+                    // Remove WorkslotEmployee entries
+                    _dbContext.WorkslotEmployees.RemoveRange(workslotEmployeeIds);
+
+                    // Remove the duplicate work slots
+                    _dbContext.Workslots.RemoveRange(workSlotsToDelete);
+
+                    // Save changes to the database
+                    await _dbContext.SaveChangesAsync();
+
+                    // Commit the transaction
+                    transaction.Commit();
+
+                    return new { message = "Add Holiday Successfully", newHolidayId = newHolidayId };
+                }
             }
             catch (Exception ex)
             {
-                throw new Exception(ex.Message, ex);
+                throw new Exception("Failed to add holiday: " + ex.Message, ex);
             }
+        }
+
+        public async Task<bool> IsHoliday(MyDbContext dbContext, string dateString)
+        {
+            // Parse the date from the string
+            DateTime date;
+            try
+            {
+                date = DateTime.ParseExact(dateString, "yyyy/MM/dd", CultureInfo.InvariantCulture);
+            }
+            catch (FormatException)
+            {
+                throw new ArgumentException("Invalid date format. Please use 'yyyy/MM/dd'.");
+            }
+
+            // Check if the date is a holiday in any department
+            var isHoliday = await dbContext.DepartmentHolidays
+                                           .AnyAsync(h => h.StartDate <= date && h.EndDate >= date && !h.IsDeleted);
+
+            return isHoliday;
         }
 
         public async Task<bool> SoftDeleteAsync(Guid id)

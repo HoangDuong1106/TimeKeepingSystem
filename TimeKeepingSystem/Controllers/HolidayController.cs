@@ -12,6 +12,7 @@ using DataAccess.InterfaceService;
 using BusinessObject.DTO;
 using DataAccess.InterfaceRepository;
 using System.Globalization;
+using DataAccess.DAO;
 
 namespace TimeKeepingSystem.Controllers
 {
@@ -100,7 +101,7 @@ namespace TimeKeepingSystem.Controllers
             {
                 foreach (Guid departmentId in id)
                 {
-                    await repositoryAccount.DeleteHoliday(departmentId);
+                    await HolidayDAO.DeleteHoliday(departmentId);
                 }
                 return Ok(new { StatusCode = 200, Message = "Delete successful" });
             }

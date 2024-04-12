@@ -9,11 +9,13 @@ namespace DataAccess.Repository
     public class WorkslotRepository : Repository<Workslot>, IWorkslotRepository
     {
         private readonly MyDbContext _dbContext;
+        private readonly IDepartmentHolidayRepository _holidayRepository;
 
-        public WorkslotRepository(MyDbContext context) : base(context)
+        public WorkslotRepository(MyDbContext context, IDepartmentHolidayRepository holidayRepository) : base(context)
         {
             // You can add more specific methods here if needed
             _dbContext = context;
+            _holidayRepository = holidayRepository;
         }
 
         public async Task<bool> SoftDeleteAsync(Guid id)
@@ -59,8 +61,9 @@ namespace DataAccess.Repository
             {
                 string dayOfWeek = date.DayOfWeek.ToString();
                 bool isWorkDay = (bool)typeof(DateStatusDTO).GetProperty(dayOfWeek).GetValue(workDays);
+                bool isHoliday = await _holidayRepository.IsHoliday(_dbContext, date.ToString("yyyy/MM/dd"));
 
-                if (isWorkDay)
+                if (isWorkDay && !isHoliday)
                 {
                     // Create morning slot
                     Workslot morningSlot = new Workslot
@@ -94,6 +97,7 @@ namespace DataAccess.Repository
             }
             _dbContext.Workslots.AddRange(workSlots);
             await _dbContext.SaveChangesAsync();
+            await RemoveDuplicateWorkSlots();
             return workSlots;
         }
 
@@ -188,10 +192,11 @@ namespace DataAccess.Repository
             {
                 string dayOfWeek = date.DayOfWeek.ToString();
                 bool isWorkDay = (bool)typeof(DateStatusDTO).GetProperty(dayOfWeek).GetValue(workDays);
+                bool isHoliday = await _holidayRepository.IsHoliday(_dbContext, date.ToString("yyyy/MM/dd"));
 
                 var slotsForDate = workSlots.Where(ws => ws.DateOfSlot.Date == date.Date).ToList();
 
-                if (isWorkDay && slotsForDate.Count >= 2)
+                if (isWorkDay && slotsForDate.Count >= 2 && !isHoliday)
                 {
                     // If it's a working day and has both morning and afternoon slots, combine them
                     var morningSlot = slotsForDate.First(ws => ws.IsMorning);
@@ -204,7 +209,7 @@ namespace DataAccess.Repository
                         endTime = afternoonSlot.ToHour
                     });
                 }
-                else if (isWorkDay)
+                else if (isWorkDay && !isHoliday)
                 {
                     // If it's a working day but has only one slot, add it
                     foreach (var slot in slotsForDate)
@@ -218,12 +223,22 @@ namespace DataAccess.Repository
                         });
                     }
                 }
-                else
+                else if (isHoliday)
                 {
                     // If it's not a working day, add a "not working" entry
                     response.Add(new
                     {
-                        title = "Not working",
+                        title = "Public Holiday",
+                        date = date.ToString("yyyy-MM-dd"),
+                        startTime = "00:00",
+                        endTime = "00:00"
+                    });
+                } else
+                {
+                    // If it's not a working day, add a "not working" entry
+                    response.Add(new
+                    {
+                        title = "Non working",
                         date = date.ToString("yyyy-MM-dd"),
                         startTime = "00:00",
                         endTime = "00:00"

@@ -111,9 +111,6 @@ namespace DataAccess.DAO
                         context.DepartmentHolidays.Remove(member);
                         await context.SaveChangesAsync();
                     }
-
-
-
                 }
             }
             catch (Exception e)
