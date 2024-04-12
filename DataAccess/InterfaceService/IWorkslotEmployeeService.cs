@@ -11,6 +11,5 @@ namespace DataAccess.InterfaceService
         // Empty interface
         Task<object> GenerateWorkSlotEmployee(CreateWorkSlotRequest request);
         Task<object> GetWorkSlotEmployeeByEmployeeId(Guid employeeId);
-        Task<object> GetWorkSlotEmployeesByDepartmentId(Guid departmentId, string startTime, string endTime);
     }
 }

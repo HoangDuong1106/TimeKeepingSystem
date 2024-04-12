@@ -28,11 +28,6 @@ namespace DataAccess.Service
             return await _workslotEmployeeRepository.GetWorkSlotEmployeeByEmployeeId(employeeId);
         }
 
-        public async Task<object> GetWorkSlotEmployeesByDepartmentId(Guid departmentId, string startTime, string endTime)
-        {
-            return await _workslotEmployeeRepository.GetWorkSlotEmployeesByDepartmentId(departmentId, startTime, endTime);
-        }
-
         public async Task<object> CheckInWorkslotEmployee(Guid employeeId, DateTime? currentTime) => await _workslotEmployeeRepository.CheckInWorkslotEmployee(employeeId, currentTime);
 
         public async Task<string> ExportWorkSlotEmployeeReport(Guid departmentId) => await _workslotEmployeeRepository.ExportWorkSlotEmployeeReport(departmentId);

@@ -43,3 +43,4 @@ D:\Dan\TimeKeepingSystem\BusinessObject\obj\Debug\net6.0\refint\BusinessObject.d
 D:\Dan\TimeKeepingSystem\BusinessObject\obj\Debug\net6.0\BusinessObject.pdb
 D:\Dan\TimeKeepingSystem\BusinessObject\obj\Debug\net6.0\BusinessObject.genruntimeconfig.cache
 D:\Dan\TimeKeepingSystem\BusinessObject\obj\Debug\net6.0\ref\BusinessObject.dll
+D:\Dan\TimeKeepingSystem\BusinessObject\bin\Debug\net6.0\appsettings.json

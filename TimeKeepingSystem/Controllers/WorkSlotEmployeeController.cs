@@ -35,7 +35,7 @@ namespace TimeKeepingSystem.Controllers
         }
 
         [HttpGet("get-workslot-employee-by-department-id")]
-        public async Task<object> GetWorkSlotEmployeesByDepartmentId(Guid departmentId, string startTime, string endTime)
+        public async Task<List<object>> GetWorkSlotEmployeesByDepartmentId(string? departmentId, string startTime, string endTime)
         {
             return await _workslotEmployeeRepository.GetWorkSlotEmployeesByDepartmentId(departmentId, startTime, endTime);
         }

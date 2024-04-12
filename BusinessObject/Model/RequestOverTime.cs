@@ -18,6 +18,8 @@ public class RequestOverTime
     public double NumberOfHour { get; set; }
     [Required]
     public DateTime ToHour { get; set; }
+    public string? CheckInTime { get; set; }
+    public string? CheckOutTime { get; set; }
 
     [ForeignKey("WorkingStatus")]
     public Guid WorkingStatusId { get; set; }

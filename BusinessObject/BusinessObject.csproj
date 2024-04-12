@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <None Remove="appsettings.Development.json" />
+    <None Remove="appsettings.json" />
   </ItemGroup>
 
   <ItemGroup>
@@ -16,6 +17,9 @@
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
+		  <Content Include="..\TimeKeepingSystem\appsettings.json" Link="appsettings.json">
+			  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		  </Content>
   </ItemGroup>
 
   <ItemGroup>
