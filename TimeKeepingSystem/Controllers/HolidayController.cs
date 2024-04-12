@@ -72,7 +72,6 @@ namespace TimeKeepingSystem.Controllers
         {
             try
             {
-                Guid id = Guid.NewGuid();
                 var newAcc = new Holiday
                 {
                     HolidayId = (Guid)acc.HolidayId,
@@ -83,9 +82,18 @@ namespace TimeKeepingSystem.Controllers
                     StartDate = acc.StartDate,
                     EndDate = acc.EndDate,
                 };
-                await repositoryAccount.UpdateHoliday(newAcc);
-                return Ok(new { StatusCode = 200, Message = "Update successful" });
-
+                await Delete((Guid)acc.HolidayId);
+                var result = await _departmentHolidayRepository.AddAsync(new PostHolidayListDTO
+                {
+                    HolidayId = (Guid)acc.HolidayId,
+                    HolidayName = acc.HolidayName,
+                    Description = acc.Description,
+                    IsDeleted = false,
+                    IsRecurring = (bool)((acc.IsRecurring != null) ? acc.IsRecurring : true),
+                    StartDate = acc.StartDate.ToString("yyyy/MM/dd"),
+                    EndDate = acc.EndDate.ToString("yyyy/MM/dd"),
+                });
+                return Ok(new { StatusCode = 200, result });
             }
             catch (Exception ex)
             {
@@ -94,11 +102,12 @@ namespace TimeKeepingSystem.Controllers
         }
 
         [HttpDelete]
-        public async Task<IActionResult> Delete(Guid[] id)
+        public async Task<IActionResult> Delete(Guid id)
         {
             try
             {
-                return Ok(await _departmentHolidayRepository.SoftDelete(id));
+                Guid[] ids = { id };
+                return Ok(await _departmentHolidayRepository.SoftDelete(ids));
             }
             catch (Exception ex)
             {

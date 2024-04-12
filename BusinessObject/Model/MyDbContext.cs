@@ -125,6 +125,8 @@ public class MyDbContext : DbContext
             .HasDefaultValue("[]")
             .IsRequired();
 
+        modelBuilder.Entity<Holiday>().ToTable("DepartmentHolidays");
+
         modelBuilder.Entity<AttendanceStatus>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<Team>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<Holiday>().HasQueryFilter(e => !e.IsDeleted);

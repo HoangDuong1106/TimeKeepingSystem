@@ -39,7 +39,7 @@ namespace DataAccess.Repository
             {
                 using (var transaction = _dbContext.Database.BeginTransaction())
                 {
-                    var newHolidayId = Guid.NewGuid();
+                    var newHolidayId = acc.HolidayId != Guid.Empty ? acc.HolidayId : Guid.NewGuid();
                     var newHoliday = new Holiday()
                     {
                         HolidayId = newHolidayId,
