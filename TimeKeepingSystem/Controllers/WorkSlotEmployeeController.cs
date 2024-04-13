@@ -67,7 +67,7 @@ namespace TimeKeepingSystem.Controllers
             {
                 if (FakecurrentTime != null)
                 {
-                    DateTime fakeTime = DateTime.ParseExact(FakecurrentTime, "yyyy,MM,dd,HH,mm,ss", CultureInfo.InvariantCulture);
+                    DateTime fakeTime = DateTime.ParseExact(FakecurrentTime, "yyyy/MM/dd-HH:mm:ss", CultureInfo.InvariantCulture);
                     return Ok(await _workslotEmployeeRepository.CheckInWorkslotEmployee(employeeId, fakeTime));
                 }
                 return Ok(await _workslotEmployeeRepository.CheckInWorkslotEmployee(employeeId, null));
@@ -85,10 +85,24 @@ namespace TimeKeepingSystem.Controllers
             {
                 if (FakecurrentTime != null)
                 {
-                    DateTime fakeTime = DateTime.ParseExact(FakecurrentTime, "yyyy,MM,dd,HH,mm,ss", CultureInfo.InvariantCulture);
+                    DateTime fakeTime = DateTime.ParseExact(FakecurrentTime, "yyyy/MM/dd-HH:mm:ss", CultureInfo.InvariantCulture);
                     return Ok(await _workslotEmployeeRepository.CheckOutWorkslotEmployee(employeeId, fakeTime));
                 }
                 return Ok(await _workslotEmployeeRepository.CheckOutWorkslotEmployee(employeeId, null));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        // generate checkin checkout data API
+        [HttpGet("generate-checkin-checkout-data")]
+        public async Task<ActionResult<object>> SimulateCheckInOutForDepartment(Guid departmentId, string startDateStr, string endDateStr)
+        {
+            try
+            {
+                return Ok(await _workslotEmployeeRepository.SimulateCheckInOutForDepartment(departmentId, startDateStr, endDateStr));
             }
             catch (Exception ex)
             {

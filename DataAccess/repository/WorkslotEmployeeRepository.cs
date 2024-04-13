@@ -106,7 +106,8 @@ namespace DataAccess.Repository
             _dbContext.WorkslotEmployees.AddRange(newWorkSlotEmployees);
             await _dbContext.SaveChangesAsync();
 
-            return newWorkSlotEmployees.Select(x => new {
+            return newWorkSlotEmployees.Select(x => new
+            {
                 workslotEmployeeId = x.Id
             }).ToList();
         }
@@ -356,10 +357,10 @@ namespace DataAccess.Repository
                         Coefficients = null,
                         isOvertime = false
                     }).ToList();
-                    groupedWorkSlotEmployees.AddRange(await GetApprovedOvertimeRequestsAsync(employeeId, starttime, endtime));
+                groupedWorkSlotEmployees.AddRange(await GetApprovedOvertimeRequestsAsync(employeeId, starttime, endtime));
 
-                    groupedWorkSlotEmployees = groupedWorkSlotEmployees.OrderBy(item => DateTime.ParseExact(item.Date, "yyyy/MM/dd", CultureInfo.InvariantCulture))  // Sort by Date
-                    .ToList();
+                groupedWorkSlotEmployees = groupedWorkSlotEmployees.OrderBy(item => DateTime.ParseExact(item.Date, "yyyy/MM/dd", CultureInfo.InvariantCulture))  // Sort by Date
+                .ToList();
 
                 double totalWorkedHours = groupedWorkSlotEmployees
                     .Where(item => item.Duration != "N/A")
@@ -438,91 +439,91 @@ namespace DataAccess.Repository
             return coefficients["normalDay"];
         }
 
-    //    public async Task<List<object>> GetWorkSlotEmployeesByDepartmentId(Guid? departmentId, string startTime, string endTime)
-    //    {
-    //        var startDate = DateTime.ParseExact(startTime, "yyyy/MM/dd", CultureInfo.InvariantCulture);
-    //        var endDate = DateTime.ParseExact(endTime, "yyyy/MM/dd", CultureInfo.InvariantCulture);
+        //    public async Task<List<object>> GetWorkSlotEmployeesByDepartmentId(Guid? departmentId, string startTime, string endTime)
+        //    {
+        //        var startDate = DateTime.ParseExact(startTime, "yyyy/MM/dd", CultureInfo.InvariantCulture);
+        //        var endDate = DateTime.ParseExact(endTime, "yyyy/MM/dd", CultureInfo.InvariantCulture);
 
-    //        // Filter employees based on departmentId if provided
-    //        var employeesQuery = _dbContext.Employees.AsQueryable();
-    //        if (departmentId.HasValue)
-    //        {
-    //            employeesQuery = employeesQuery.Where(e => e.DepartmentId == departmentId.Value);
-    //        }
+        //        // Filter employees based on departmentId if provided
+        //        var employeesQuery = _dbContext.Employees.AsQueryable();
+        //        if (departmentId.HasValue)
+        //        {
+        //            employeesQuery = employeesQuery.Where(e => e.DepartmentId == departmentId.Value);
+        //        }
 
-    //        var employees = await employeesQuery.ToListAsync();
-    //        var allEmployeeResults = new List<object>();
+        //        var employees = await employeesQuery.ToListAsync();
+        //        var allEmployeeResults = new List<object>();
 
-    //        // Fetch the coefficients from Firebase or a similar approach
-    //        var coefficients = new Dictionary<string, string> {
-    //    { "normalDay", "x1.5" },
-    //    { "nonWorkingDay", "x2" },
-    //    { "holiday", "x3" }
-    //};
+        //        // Fetch the coefficients from Firebase or a similar approach
+        //        var coefficients = new Dictionary<string, string> {
+        //    { "normalDay", "x1.5" },
+        //    { "nonWorkingDay", "x2" },
+        //    { "holiday", "x3" }
+        //};
 
-    //        foreach (var employee in employees)
-    //        {
-    //            var workSlotEmployees = await _dbContext.WorkslotEmployees
-    //                .Include(we => we.Workslot)
-    //                .Include(we => we.AttendanceStatus)
-    //                .Where(we => we.EmployeeId == employee.Id && we.Workslot.DateOfSlot >= startDate && we.Workslot.DateOfSlot <= endDate)
-    //                .ToListAsync();
+        //        foreach (var employee in employees)
+        //        {
+        //            var workSlotEmployees = await _dbContext.WorkslotEmployees
+        //                .Include(we => we.Workslot)
+        //                .Include(we => we.AttendanceStatus)
+        //                .Where(we => we.EmployeeId == employee.Id && we.Workslot.DateOfSlot >= startDate && we.Workslot.DateOfSlot <= endDate)
+        //                .ToListAsync();
 
-    //            var overtimeRequests = await _dbContext.Requests
-    //                .Include(r => r.RequestOverTime)
-    //                .Where(r => r.EmployeeSendRequestId == employee.Id && r.RequestOverTime.DateOfOverTime >= startDate && r.RequestOverTime.DateOfOverTime <= endDate && r.Status == RequestStatus.Approved)
-    //                .ToListAsync();
+        //            var overtimeRequests = await _dbContext.Requests
+        //                .Include(r => r.RequestOverTime)
+        //                .Where(r => r.EmployeeSendRequestId == employee.Id && r.RequestOverTime.DateOfOverTime >= startDate && r.RequestOverTime.DateOfOverTime <= endDate && r.Status == RequestStatus.Approved)
+        //                .ToListAsync();
 
-    //            var workingDetails = new List<object>();
+        //            var workingDetails = new List<object>();
 
-    //            foreach (var workSlotEmployee in workSlotEmployees)
-    //            {
-    //                var dateStr = workSlotEmployee.Workslot.DateOfSlot.ToString("yyyy/MM/dd");
-    //                var isHoliday = await IsHoliday(dateStr);
-    //                var isNonWorkingDay = IsNonWorkingDay(workSlotEmployee.Workslot.DateOfSlot, employee.DepartmentId.Value);
+        //            foreach (var workSlotEmployee in workSlotEmployees)
+        //            {
+        //                var dateStr = workSlotEmployee.Workslot.DateOfSlot.ToString("yyyy/MM/dd");
+        //                var isHoliday = await IsHoliday(dateStr);
+        //                var isNonWorkingDay = IsNonWorkingDay(workSlotEmployee.Workslot.DateOfSlot, employee.DepartmentId.Value);
 
-    //                string coefficient = isHoliday ? coefficients["holiday"] : (isNonWorkingDay ? coefficients["nonWorkingDay"] : coefficients["normalDay"]);
+        //                string coefficient = isHoliday ? coefficients["holiday"] : (isNonWorkingDay ? coefficients["nonWorkingDay"] : coefficients["normalDay"]);
 
-    //                workingDetails.Add(new
-    //                {
-    //                    date = dateStr,
-    //                    inn = workSlotEmployee.CheckInTime ?? "N/A",
-    //                    outt = workSlotEmployee.CheckOutTime ?? "N/A",
-    //                    duration = "N/A", // Calculate duration if needed
-    //                    COEFFICIENTS = coefficient,
-    //                    isOvertime = false
-    //                });
-    //            }
+        //                workingDetails.Add(new
+        //                {
+        //                    date = dateStr,
+        //                    inn = workSlotEmployee.CheckInTime ?? "N/A",
+        //                    outt = workSlotEmployee.CheckOutTime ?? "N/A",
+        //                    duration = "N/A", // Calculate duration if needed
+        //                    COEFFICIENTS = coefficient,
+        //                    isOvertime = false
+        //                });
+        //            }
 
-    //            foreach (var overtimeRequest in overtimeRequests)
-    //            {
-    //                var dateStr = overtimeRequest.RequestOverTime.DateOfOverTime.ToString("yyyy/MM/dd");
-    //                var isHoliday = await IsHoliday(dateStr);
-    //                var isNonWorkingDay = IsNonWorkingDay(overtimeRequest.RequestOverTime.DateOfOverTime, employee.DepartmentId.Value);
+        //            foreach (var overtimeRequest in overtimeRequests)
+        //            {
+        //                var dateStr = overtimeRequest.RequestOverTime.DateOfOverTime.ToString("yyyy/MM/dd");
+        //                var isHoliday = await IsHoliday(dateStr);
+        //                var isNonWorkingDay = IsNonWorkingDay(overtimeRequest.RequestOverTime.DateOfOverTime, employee.DepartmentId.Value);
 
-    //                string coefficient = isHoliday ? coefficients["holiday"] : (isNonWorkingDay ? coefficients["nonWorkingDay"] : coefficients["normalDay"]);
+        //                string coefficient = isHoliday ? coefficients["holiday"] : (isNonWorkingDay ? coefficients["nonWorkingDay"] : coefficients["normalDay"]);
 
-    //                workingDetails.Add(new
-    //                {
-    //                    date = dateStr,
-    //            inn = overtimeRequest.RequestOverTime.FromHour,
-    //            outt = overtimeRequest.RequestOverTime.ToHour,
-    //                    duration = (overtimeRequest.RequestOverTime.ToHour - overtimeRequest.RequestOverTime.FromHour).ToString(@"hh\:mm"),
-    //                    COEFFICIENTS = coefficient,
-    //                    isOvertime = true
-    //                });
-    //            }
+        //                workingDetails.Add(new
+        //                {
+        //                    date = dateStr,
+        //            inn = overtimeRequest.RequestOverTime.FromHour,
+        //            outt = overtimeRequest.RequestOverTime.ToHour,
+        //                    duration = (overtimeRequest.RequestOverTime.ToHour - overtimeRequest.RequestOverTime.FromHour).ToString(@"hh\:mm"),
+        //                    COEFFICIENTS = coefficient,
+        //                    isOvertime = true
+        //                });
+        //            }
 
-    //            allEmployeeResults.Add(new
-    //            {
-    //                Name = employee.FirstName + " " + employee.LastName,
-    //                Working = workingDetails,
-    //                TeamName = employee.Department != null ? employee.Department.Name : "No Team"
-    //            });
-    //        }
+        //            allEmployeeResults.Add(new
+        //            {
+        //                Name = employee.FirstName + " " + employee.LastName,
+        //                Working = workingDetails,
+        //                TeamName = employee.Department != null ? employee.Department.Name : "No Team"
+        //            });
+        //        }
 
-    //        return allEmployeeResults;
-    //    }
+        //        return allEmployeeResults;
+        //    }
 
         public static string ConvertHoursToTimeString(double numberOfHours)
         {
@@ -762,6 +763,128 @@ namespace DataAccess.Repository
             return new { message = "Successfully checked out." };
         }
 
+
+        // Generate fake checkin checkout data
+        public async Task<object> SimulateCheckInOutForDepartment(Guid departmentId, string startDateStr, string endDateStr)
+        {
+            DateTime startDate;
+            DateTime endDate;
+
+            // Attempt to parse the start and end date strings
+            try
+            {
+                startDate = DateTime.ParseExact(startDateStr, "yyyy/MM/dd", CultureInfo.InvariantCulture);
+                endDate = DateTime.ParseExact(endDateStr, "yyyy/MM/dd", CultureInfo.InvariantCulture);
+            }
+            catch (FormatException ex)
+            {
+                throw new Exception($"Invalid date format: {ex.Message}");
+            }
+
+            if (startDate > endDate)
+            {
+                throw new Exception("Start date must be earlier than or equal to end date.");
+            }
+
+            var departmentEmployees = await _dbContext.Employees
+                .Where(e => e.DepartmentId == departmentId && !e.IsDeleted)
+                .ToListAsync();
+
+            Random rand = new Random();
+            var listEmployeeCheckin = new List<object>();
+
+            foreach (var employee in departmentEmployees)
+            {
+                // Retrieve approved leave days for this employee
+                var approvedLeaveDates = await GetApprovedLeaveDaysByEmployeeIdAsync(employee.Id);
+                var workslotCheckin = new List<object>();
+                for (DateTime date = startDate; date <= endDate; date = date.AddDays(1))
+                {
+                    // Check if this date is an approved leave date
+                    if (approvedLeaveDates.Contains(date.Date))
+                        continue;  // Skip check-in/check-out processing for this date
+
+                    var workslots = await _dbContext.WorkslotEmployees
+                        .Include(wse => wse.Workslot)
+                        .Where(wse => wse.EmployeeId == employee.Id && wse.Workslot.DateOfSlot.Date == date)
+                        .ToListAsync();
+                    
+                    foreach (var slot in workslots)
+                    {
+                        if (slot.Workslot.IsMorning)
+                        {
+                            var checkInTime = GetRandomCheckInTime(slot.Workslot.FromHour, rand);
+                            await CheckInWorkslotEmployee(employee.Id, ConvertToDateTime(date, checkInTime)); // Random morning check-in time
+                            await CheckOutWorkslotEmployee(employee.Id, ConvertToDateTime(date, "12:00")); // Fixed morning check-out time
+                            workslotCheckin.Add(new { slotId = slot.WorkslotId });
+                        }
+                        else
+                        {
+                            await CheckInWorkslotEmployee(employee.Id, ConvertToDateTime(date, "13:00")); // Fixed afternoon check-in time
+                            var checkOutTime = GetRandomCheckOutTime(slot.Workslot.ToHour, rand);
+                            await CheckOutWorkslotEmployee(employee.Id, ConvertToDateTime(date, checkOutTime)); // Random afternoon check-out time
+                            workslotCheckin.Add(new { slotId = slot.WorkslotId });
+                        }
+                    }
+                }
+
+                listEmployeeCheckin.Add(new { CheckInedEmployeeId = employee.Id, workslotCheckin });
+            }
+
+            return new { startDate = startDate.ToString("yyyy/MM/dd"),
+            endDate = endDate.ToString("yyyy/MM/dd"),
+            listEmployeeCheckin
+            };
+        }
+
+        private async Task<HashSet<DateTime>> GetApprovedLeaveDaysByEmployeeIdAsync(Guid employeeId)
+        {
+            var approvedLeaveDates = new HashSet<DateTime>();
+
+            var approvedLeaveRequests = await _dbContext.Requests
+                .Include(r => r.RequestLeave)
+                    .ThenInclude(rl => rl.WorkslotEmployees)
+                        .ThenInclude(we => we.Workslot)
+                .Where(r => r.EmployeeSendRequestId == employeeId && r.Status == RequestStatus.Approved && r.requestType == RequestType.Leave)
+                .ToListAsync();
+
+            foreach (var request in approvedLeaveRequests)
+            {
+                var leaveDates = request.RequestLeave.WorkslotEmployees
+                    .Where(we => !we.IsDeleted)
+                    .Select(we => we.Workslot.DateOfSlot)
+                    .Distinct();
+
+                foreach (var date in leaveDates)
+                {
+                    approvedLeaveDates.Add(date.Date);
+                }
+            }
+
+            return approvedLeaveDates;
+        }
+
+        private string GetRandomCheckInTime(string baseTime, Random rand)
+        {
+            var time = DateTime.ParseExact(baseTime, "HH:mm", CultureInfo.InvariantCulture);
+            var minutesToAdd = rand.Next(-30, 0); // Random time up to 30 minutes before
+            return time.AddMinutes(minutesToAdd).ToString("HH:mm");
+        }
+
+        private string GetRandomCheckOutTime(string baseTime, Random rand)
+        {
+            var time = DateTime.ParseExact(baseTime, "HH:mm", CultureInfo.InvariantCulture);
+            var minutesToAdd = rand.Next(0, 30); // Random time up to 30 minutes after
+            return time.AddMinutes(minutesToAdd).ToString("HH:mm");
+        }
+
+        private DateTime ConvertToDateTime(DateTime date, string time)
+        {
+            return DateTime.ParseExact($"{date.ToString("yyyy/MM/dd")}-{time}", "yyyy/MM/dd-HH:mm", CultureInfo.InvariantCulture);
+        }
+        // End of generate checkin checkout data
+
+
         public async Task<object> CheckInOutForPeriod(Guid departmentId, DateTime startDate, DateTime endDate)
         {
             if (startDate > endDate)
@@ -803,7 +926,7 @@ namespace DataAccess.Repository
             return new { messages };
         }
 
-        private DateTime ConvertToDateTime(DateTime date, string time)
+        private DateTime ConvertToDateTime2(DateTime date, string time)
         {
             var timeParts = time.Split(':');
             int hour = int.Parse(timeParts[0]);
@@ -838,11 +961,11 @@ namespace DataAccess.Repository
                     {"Paternity Leave", "PL" },
                     {"Unpaid Leave", "UL" },
                     {"Study Leave", "STL" },
-                    {"WFH", "WFH" },        
-                    {"Absent", "AS" },        
-                    {"Training", "TN" },        
-                    {"Working", "WK" },        
-                    {"Remote Working", "RW" },        
+                    {"WFH", "WFH" },
+                    {"Absent", "AS" },
+                    {"Training", "TN" },
+                    {"Working", "WK" },
+                    {"Remote Working", "RW" },
                     {"Lack of Time", "LOT" }
 
         };
