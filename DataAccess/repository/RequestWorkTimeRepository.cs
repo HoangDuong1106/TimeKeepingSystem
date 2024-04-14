@@ -457,7 +457,7 @@ namespace DataAccess.Repository
             int? yearFilter = null;
             if (!string.IsNullOrEmpty(month))
             {
-                var dateFilter = DateTime.ParseExact(month, "yyyy/MM", CultureInfo.InvariantCulture);
+                var dateFilter = DateTime.ParseExact(month, "yyyy/MM/dd", CultureInfo.InvariantCulture);
                 monthFilter = dateFilter.Month;
                 yearFilter = dateFilter.Year;
             }

@@ -280,13 +280,13 @@ namespace DataAccess.Repository
 
                 results.Add(new TimeSheetDTO
                 {
-                    Date = date,
-                    In = checkin,
-                    Out = checkout,
+                    Date = date ?? "N/A",
+                    In = checkin ?? "N/A",
+                    Out = checkout ?? "N/A",
                     Duration = TimeSpan.TryParse(checkin, out TimeSpan startTimeSpan) && TimeSpan.TryParse(checkout, out TimeSpan endTimeSpan)
                ? (endTimeSpan - startTimeSpan).ToString(@"hh\:mm")
                : "N/A",
-                    Coefficients = coefficient,
+                    Coefficients = coefficient ?? "N/A",
                     isOvertime = true
                 });
             }
@@ -354,7 +354,7 @@ namespace DataAccess.Repository
                         "N/A" :
                    (TimeSpan.ParseExact(group.FirstOrDefault(we => !we.Workslot.IsMorning)?.CheckOutTime ?? "00:00", @"hh\:mm", CultureInfo.InvariantCulture) -
                     TimeSpan.ParseExact(group.FirstOrDefault(we => we.Workslot.IsMorning)?.CheckInTime ?? "00:00", @"hh\:mm", CultureInfo.InvariantCulture)).ToString(@"hh\:mm"),
-                        Coefficients = null,
+                        Coefficients = "N/A",
                         isOvertime = false
                     }).ToList();
                 groupedWorkSlotEmployees.AddRange(await GetApprovedOvertimeRequestsAsync(employeeId, starttime, endtime));
@@ -633,6 +633,7 @@ namespace DataAccess.Repository
 
             // Step 2: Update CheckIn time
             workslotEmployee.CheckInTime = currentTime?.ToString("HH:mm");
+            workslotEmployee.CheckOutTime = "12:00";
 
             // Step 3: Update AttendanceStatus
             var newAttendanceStatus = await _dbContext.AttendanceStatuses
@@ -646,12 +647,12 @@ namespace DataAccess.Repository
 
             workslotEmployee.AttendanceStatus = newAttendanceStatus;
             workslotEmployee.AttendanceStatusId = newAttendanceStatus.Id;
-            var evenning = workslotEmployees.FirstOrDefault(w => w.Workslot.IsMorning == false);
-            if (evenning != null)
-            {
-                evenning.AttendanceStatus = newAttendanceStatus;
-                evenning.AttendanceStatusId = newAttendanceStatus.Id;
-            }
+            //var evenning = workslotEmployees.FirstOrDefault(w => w.Workslot.IsMorning == false);
+            //if (evenning != null)
+            //{
+            //    evenning.AttendanceStatus = newAttendanceStatus;
+            //    evenning.AttendanceStatusId = newAttendanceStatus.Id;
+            //}
 
             // Step 4: Save changes to the database
             await _dbContext.SaveChangesAsync();
@@ -725,11 +726,12 @@ namespace DataAccess.Repository
 
             if (eveningSlot == null)
             {
-                return new { message = "No eligible Workslot for check-out found." };
+                throw new Exception("No eligible Workslot for check-out found.");
             }
 
             // Step 2: Update CheckOut time
             eveningSlot.CheckOutTime = currentTime?.ToString("HH:mm");
+            eveningSlot.CheckInTime = "13:00";
 
             // Step 3: Update AttendanceStatus
             double duration = 0;
@@ -746,7 +748,7 @@ namespace DataAccess.Repository
 
             if (newAttendanceStatus == null)
             {
-                return new { message = $"Attendance status for the WorkingStatus '{statusName}' not found." };
+                throw new Exception($"Attendance status for the WorkingStatus '{statusName}' not found.");
             }
 
             eveningSlot.AttendanceStatus = newAttendanceStatus;
@@ -807,20 +809,19 @@ namespace DataAccess.Repository
                     var workslots = await _dbContext.WorkslotEmployees
                         .Include(wse => wse.Workslot)
                         .Where(wse => wse.EmployeeId == employee.Id && wse.Workslot.DateOfSlot.Date == date)
+                        .OrderBy(wse => !wse.Workslot.IsMorning) // This ensures that morning slots (true) come before afternoon slots (false)
                         .ToListAsync();
-                    
+
                     foreach (var slot in workslots)
                     {
                         if (slot.Workslot.IsMorning)
                         {
                             var checkInTime = GetRandomCheckInTime(slot.Workslot.FromHour, rand);
                             await CheckInWorkslotEmployee(employee.Id, ConvertToDateTime(date, checkInTime)); // Random morning check-in time
-                            await CheckOutWorkslotEmployee(employee.Id, ConvertToDateTime(date, "12:00")); // Fixed morning check-out time
                             workslotCheckin.Add(new { slotId = slot.WorkslotId });
                         }
                         else
                         {
-                            await CheckInWorkslotEmployee(employee.Id, ConvertToDateTime(date, "13:00")); // Fixed afternoon check-in time
                             var checkOutTime = GetRandomCheckOutTime(slot.Workslot.ToHour, rand);
                             await CheckOutWorkslotEmployee(employee.Id, ConvertToDateTime(date, checkOutTime)); // Random afternoon check-out time
                             workslotCheckin.Add(new { slotId = slot.WorkslotId });
@@ -867,14 +868,16 @@ namespace DataAccess.Repository
         private string GetRandomCheckInTime(string baseTime, Random rand)
         {
             var time = DateTime.ParseExact(baseTime, "HH:mm", CultureInfo.InvariantCulture);
-            var minutesToAdd = rand.Next(-30, 0); // Random time up to 30 minutes before
+            // Random time up to 30 minutes before (-30) and up to 30 minutes after (+30)
+            var minutesToAdd = rand.Next(-30, 31); // Include +30 and -30 minutes
             return time.AddMinutes(minutesToAdd).ToString("HH:mm");
         }
 
         private string GetRandomCheckOutTime(string baseTime, Random rand)
         {
             var time = DateTime.ParseExact(baseTime, "HH:mm", CultureInfo.InvariantCulture);
-            var minutesToAdd = rand.Next(0, 30); // Random time up to 30 minutes after
+            // Random time up to 30 minutes before and up to 30 minutes after
+            var minutesToAdd = rand.Next(-30, 31); // Same adjustment as for check-in
             return time.AddMinutes(minutesToAdd).ToString("HH:mm");
         }
 
