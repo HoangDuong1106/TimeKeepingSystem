@@ -118,6 +118,7 @@ namespace DataAccess.Repository
                 .Include(r => r.RequestOverTime)
                 .ThenInclude(rot => rot.WorkingStatus)
                 .Where(r => r.EmployeeSendRequestId == employeeId && r.Status == RequestStatus.Approved && r.requestType == RequestType.OverTime)
+                .OrderBy(r => r.RequestOverTime.DateOfOverTime)
                 .ToListAsync();
 
             return overtimeRequests.Select(ot => new TimeSlotDTO
