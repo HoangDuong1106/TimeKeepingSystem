@@ -80,7 +80,8 @@ namespace DataAccess.Repository
                     LastName = e.LastName,
                     RoleName = e.UserAccount != null ? e.UserAccount.Role.Name : null,
                     RoleId = e.UserAccount != null ? e.UserAccount.RoleID : null,
-                    Email = e.Email
+                    Email = e.Email,
+                    EmployeeNumber = e.EmployeeNumber,
                     // ... (other fields)
                 }).ToList();
 
@@ -94,7 +95,8 @@ namespace DataAccess.Repository
                         LastName = manager.LastName,
                         RoleName = manager.UserAccount.Role.Name,
                         RoleId = manager.UserAccount.RoleID,
-                        Email = manager.Email
+                        Email = manager.Email,
+                        EmployeeNumber= manager.EmployeeNumber,
                     });
                 }
 
@@ -137,7 +139,8 @@ namespace DataAccess.Repository
                     FirstName = e.FirstName,
                     LastName = e.LastName,
                     RoleName = e.UserAccount.Role.Name,
-                    RoleId = e.UserAccount.RoleID
+                    RoleId = e.UserAccount.RoleID,
+                    EmployeeNumber = e.EmployeeNumber,
                     // Add other necessary mappings here
                 }).ToList();
 

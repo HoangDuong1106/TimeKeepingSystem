@@ -4,6 +4,8 @@ namespace BusinessObject.DTO
 {
     public class RequestOverTimeDTO
     {
+        public string? employeeNumber;
+
         public Guid? id { get; set; }
         public Guid? employeeId { get; set; }
         public string? employeeName { get; set; }

@@ -25,7 +25,7 @@ namespace TimeKeepingSystem.Controllers
         [HttpGet]
         public async Task<ActionResult<List<EmployeeDTO>>> GetAllAsync(Guid? roleId, Guid? DepartmentID, string? Searchname)
         {
-            return Ok(await _employeeService.GetAllAsync(roleId, DepartmentID, Searchname));
+            return Ok(await _employeeRepo.GetAllAsync(roleId, DepartmentID, Searchname));
         }
 
         // GET: api/AttendanceStatus/{id}
@@ -44,7 +44,7 @@ namespace TimeKeepingSystem.Controllers
         [HttpPost]
         public async Task<ActionResult<bool>> AddAsync(EmployeeDTO dto)
         {
-            return Ok(await _employeeService.AddAsync(dto));
+            return Ok(await _employeeRepo.AddAsync(dto));
         }
 
         //// PUT: api/AttendanceStatus
@@ -58,7 +58,7 @@ namespace TimeKeepingSystem.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult<bool>> SoftDeleteAsync(Guid id)
         {
-            var entity = await _employeeService.SoftDeleteAsync(id);
+            var entity = await _employeeRepo.SoftDeleteAsync(id);
             if (entity == null)
             {
                 return NotFound();
@@ -83,7 +83,7 @@ namespace TimeKeepingSystem.Controllers
         {
             try
             {
-                return Ok(await _employeeService.GetById(employeeId));
+                return Ok(await _employeeRepo.GetById(employeeId));
             } catch (Exception ex)
             {
                 return BadRequest(ex.Message);
@@ -95,7 +95,7 @@ namespace TimeKeepingSystem.Controllers
         {
             try
             {
-                return Ok(await _employeeService.EditEmployee(employeeDTO));
+                return Ok(await _employeeRepo.EditEmployee(employeeDTO));
             } catch (Exception ex)
             {
                 return BadRequest(ex.Message);
@@ -134,6 +134,19 @@ namespace TimeKeepingSystem.Controllers
             try
             {
                 return Ok(await _employeeRepo.GetEmployeesNotInAnyTeamAsync());
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet("get-new-employee-number-no-data-change")]
+        public async Task<ActionResult<string>> GenerateNewEmployeeNumber()
+        {
+            try
+            {
+                return Ok(await _employeeRepo.GenerateNewEmployeeNumber());
             }
             catch (Exception ex)
             {

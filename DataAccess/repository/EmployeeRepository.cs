@@ -1,4 +1,5 @@
-﻿using BusinessObject.DTO;
+﻿using BusinessObject.Constants;
+using BusinessObject.DTO;
 using DataAccess.InterfaceRepository;
 using Microsoft.EntityFrameworkCore;
 
@@ -38,7 +39,8 @@ namespace DataAccess.Repository
                 EmployeeStatusName = a.EmployeeStatus.ToString() ?? "",
                 UserID = a.UserID,
                 IsDeleted = a.IsDeleted,
-                EmploymentType = a.EmploymentType
+                EmploymentType = a.EmploymentType,
+                EmployeeNumber = a.EmployeeNumber
             }).ToListAsync();
         }
 
@@ -61,6 +63,8 @@ namespace DataAccess.Repository
                 DepartmentName = a.Department.Name,
                 EmployeeStatus = (int?)a.EmployeeStatus,
                 EmployeeStatusName = a.EmployeeStatus.ToString() ?? "",
+                EmployeeNumber = a.EmployeeNumber,
+                EmploymentType = a.EmploymentType,
                 UserID = a.UserID,
                 IsDeleted = a.IsDeleted
             }).FirstOrDefault();
@@ -70,6 +74,8 @@ namespace DataAccess.Repository
         {
             try
             {
+                var newEmployeeNumber = await GenerateNewEmployeeNumber();
+
                 await base.AddAsync(new Employee() // have dbSaveChange inside method
                 {
                     Id = (Guid)a.Id,
@@ -78,8 +84,11 @@ namespace DataAccess.Repository
                     Role = a.RoleInTeam,
                     DepartmentId = a.DepartmentId,
                     UserID = (Guid)a.UserID,
+                    EmployeeNumber = newEmployeeNumber,
                     IsDeleted = (bool)a.IsDeleted
                 });
+
+                await ApplicationFirebaseConstants.UpdateConfigVariable(ApplicationFirebaseConstants.LATEST_EMPLOYEE_NUMBER, newEmployeeNumber);
             }
             catch (Exception ex)
             {
@@ -106,6 +115,7 @@ namespace DataAccess.Repository
         {
             try
             {
+                var newEmployeeNumber = await GenerateNewEmployeeNumber();
                 // Map EmployeeDTO to Employee
                 Employee newEmployee = new Employee()
                 {
@@ -122,15 +132,18 @@ namespace DataAccess.Repository
                     //UserID = newEmployeeDTO.UserID,
                     // Add other fields here
                     EmployeeStatus = EmployeeStatus.Working,
+                    EmployeeNumber = newEmployeeNumber,
                     IsDeleted = false
                 };
 
                 // Call the AddAsync method from the repository to save the new employee
                 _dbContext.Employees.Add(newEmployee);
                 await _dbContext.SaveChangesAsync();
+                await ApplicationFirebaseConstants.UpdateConfigVariable(ApplicationFirebaseConstants.LATEST_EMPLOYEE_NUMBER, newEmployeeNumber);
                 return new
                 {
-                    EmployeeId = newEmployee.Id
+                    EmployeeId = newEmployee.Id,
+                    EmployeeNumber = newEmployeeNumber
                 };
             }
             catch (Exception ex)
@@ -317,5 +330,52 @@ namespace DataAccess.Repository
                 .Where(em => em.UserAccount.Role.Name == "Employee")
                 .ToListAsync();
         }
+
+        public async Task<string> GenerateNewEmployeeNumber()
+        {
+            string newEmployeeNumber;
+
+            try
+            {
+                // Fetch the latest employee number from Firebase
+                var employeeNumberStr = await ApplicationFirebaseConstants.GetConfigVariable("latestEmployeeNumber");
+                int lastNumber = 0;
+
+                // Check if the string was fetched and parse it
+                if (!string.IsNullOrEmpty(employeeNumberStr))
+                {
+                    employeeNumberStr = employeeNumberStr.Trim('"'); // Remove any enclosing quotes from JSON
+                    lastNumber = int.Parse(employeeNumberStr.Substring(2)); // Assuming the number starts with "EP"
+                }
+
+                // Increment the number for a new employee
+                lastNumber += 1;
+
+                // Check for overflow
+                if (lastNumber > 999999)
+                {
+                    throw new InvalidOperationException("Employee number limit reached. Please review the numbering system.");
+                }
+
+                newEmployeeNumber = "EP" + lastNumber.ToString("000000");
+
+                // Ensure no duplicates are created
+                bool exists = await _dbContext.Employees.AnyAsync(e => e.EmployeeNumber == newEmployeeNumber);
+                if (exists)
+                {
+                    throw new InvalidOperationException("Duplicate EmployeeNumber detected. Please retry.");
+                }
+
+                // Update the latest employee number in Firebase
+                //await ApplicationFirebaseConstants.UpdateConfigVariable(ApplicationFirebaseConstants.LATEST_EMPLOYEE_NUMBER, newEmployeeNumber);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error generating new employee number: " + ex.Message, ex);
+            }
+
+            return newEmployeeNumber;
+        }
+
     }
 }

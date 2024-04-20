@@ -28,5 +28,6 @@ namespace BusinessObject.DTO
         public List<DateRangeDTO?>? dateRange { get; set; }
         public Guid? SupportEmployeeId { get; set; }
         public Guid? deciderId { get; set; }
+        public string? employeeNumber { get; set; }
     }
 }

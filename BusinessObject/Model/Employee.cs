@@ -41,6 +41,8 @@ public class Employee
     [Required]
     public EmployeeStatus EmployeeStatus { get; set; }
 
+    public string EmployeeNumber { get; set; }
+
     [ForeignKey("Team")]
     [AllowNull]
     public Guid? DepartmentId { get; set; }
