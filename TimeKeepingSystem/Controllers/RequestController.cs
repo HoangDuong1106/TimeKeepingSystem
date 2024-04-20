@@ -22,11 +22,11 @@ namespace TimeKeepingSystem.Controllers
         }
 
         [HttpGet("get-all-request-type-of-employee")]
-        public async Task<ActionResult<CombinedRequestDTO>> GetAllRequestTypeOfEmployeeById(Guid employeeId)
+        public async Task<ActionResult<CombinedRequestDTO>> GetAllRequestTypeOfEmployeeById(Guid employeeId, string? dateFilter)
         {
             try
             {
-                return Ok(await _requestRepository.GetAllRequestTypesOfEmployeeById(employeeId));
+                return Ok(await _requestRepository.GetAllRequestTypesOfEmployeeById(employeeId, dateFilter));
             }
             catch (Exception ex)
             {
