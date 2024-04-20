@@ -37,6 +37,7 @@ namespace DataAccess.Repository
                 DepartmentName = a.Department.Name,
                 EmployeeStatus = (int?)a.EmployeeStatus,
                 EmployeeStatusName = a.EmployeeStatus.ToString() ?? "",
+                DeviceSerialNumber = a.DeviceSerialNumber,
                 UserID = a.UserID,
                 IsDeleted = a.IsDeleted,
                 EmploymentType = a.EmploymentType,
@@ -65,6 +66,7 @@ namespace DataAccess.Repository
                 EmployeeStatusName = a.EmployeeStatus.ToString() ?? "",
                 EmployeeNumber = a.EmployeeNumber,
                 EmploymentType = a.EmploymentType,
+                DeviceSerialNumber = a.DeviceSerialNumber,
                 UserID = a.UserID,
                 IsDeleted = a.IsDeleted
             }).FirstOrDefault();
@@ -82,6 +84,7 @@ namespace DataAccess.Repository
                     FirstName = a.FirstName,
                     LastName = a.LastName,
                     Role = a.RoleInTeam,
+                    DeviceSerialNumber = a.DeviceSerialNumber,
                     DepartmentId = a.DepartmentId,
                     UserID = (Guid)a.UserID,
                     EmployeeNumber = newEmployeeNumber,
@@ -133,6 +136,7 @@ namespace DataAccess.Repository
                     // Add other fields here
                     EmployeeStatus = EmployeeStatus.Working,
                     EmployeeNumber = newEmployeeNumber,
+                    DeviceSerialNumber = newEmployeeDTO.DeviceSerialNumber,
                     IsDeleted = false
                 };
 
@@ -201,6 +205,11 @@ namespace DataAccess.Repository
                 if (employeeDTO.PhoneNumber != null)
                 {
                     existingEmployee.PhoneNumber = employeeDTO.PhoneNumber;
+                }
+
+                if (employeeDTO.DeviceSerialNumber != null)
+                {
+                    existingEmployee.DeviceSerialNumber = employeeDTO.DeviceSerialNumber;
                 }
 
                 if (employeeDTO.DepartmentId != null)

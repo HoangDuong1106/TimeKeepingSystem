@@ -71,7 +71,7 @@ namespace TimeKeepingSystem.Controllers
         {
             try
             {
-                return Ok(await _employeeService.CreateEmployee(newEmployeeDTO));
+                return Ok(await _employeeRepo.CreateEmployee(newEmployeeDTO));
             } catch (Exception ex)
             {
                 return BadRequest(ex.Message);

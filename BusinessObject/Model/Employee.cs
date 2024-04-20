@@ -41,7 +41,9 @@ public class Employee
     [Required]
     public EmployeeStatus EmployeeStatus { get; set; }
 
-    public string EmployeeNumber { get; set; }
+    public string? EmployeeNumber { get; set; }
+
+    public string? DeviceSerialNumber { get; set; }
 
     [ForeignKey("Team")]
     [AllowNull]

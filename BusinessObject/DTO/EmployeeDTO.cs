@@ -25,5 +25,6 @@ namespace BusinessObject.DTO
         public Guid? RoleId { get; set; }
         public string? EmploymentType { get; set; }
         public string? EmployeeNumber { get; set; }
+        public string? DeviceSerialNumber { get; set; }
     }
 }
