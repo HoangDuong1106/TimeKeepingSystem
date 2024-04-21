@@ -10,8 +10,10 @@ namespace BusinessObject.DTO
         public Guid? WorkslotId { get; set; }
         public Guid? AttendanceStatusId { get; set; }
         public bool IsDeleted { get; set; }
-        public double? TimeLeaveEarly { get; set; }
-        public double? TimeComeLate { get; set; }
+        public string? TimeLeaveEarly { get; set; }
+        public string? TimeComeLate { get; set; }
+        public Guid? deciderId { get; set; }
+        public string? deciderName { get; set; }
         public string? SlotStart { get; set; }
         public string? SlotEnd { get; set; }
         public string? statusName { get; set; }

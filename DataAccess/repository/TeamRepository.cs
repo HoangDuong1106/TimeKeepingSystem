@@ -203,7 +203,12 @@ namespace DataAccess.Repository
             department.Name = data.DepartmentName; // Update department name if needed
 
             // Find if there is a new manager in the team update data
-            var newManagerId = data.Team.FirstOrDefault(t => t.RoleName == "Manager")?.EmployeeId;
+            var potentialManagers = data.Team.Where(t => t.RoleName == "Manager").ToList();
+            if (potentialManagers.Count > 1)
+            {
+                throw new Exception("More than one manager cannot be assigned to the same department.");
+            }
+            var newManagerId = potentialManagers.FirstOrDefault()?.EmployeeId;
 
             // Remove employees who are no longer in the team or have changed teams
             foreach (var employee in department.Employees.ToList()) // ToList to avoid collection modified exception
@@ -238,24 +243,38 @@ namespace DataAccess.Repository
             // Handle manager role assignment
             if (newManagerId.HasValue)
             {
-                // Demote current manager if not the new manager
                 if (department.ManagerId.HasValue && department.ManagerId != newManagerId)
                 {
+                    // Demote current manager if they are not the new manager
                     var currentManager = await _dbContext.Employees.Include(e => e.UserAccount).FirstOrDefaultAsync(e => e.Id == department.ManagerId);
                     if (currentManager != null)
                     {
                         var employeeRole = await _dbContext.Roles.FirstOrDefaultAsync(r => r.Name == "Employee");
                         currentManager.UserAccount.Role = employeeRole;
+                        currentManager.UserAccount.RoleID = employeeRole.ID;
+                    }
+
+                    // Promote the new manager
+                    var newManager = await _dbContext.Employees.Include(e => e.UserAccount).FirstOrDefaultAsync(e => e.Id == newManagerId);
+                    if (newManager != null)
+                    {
+                        var managerRole = await _dbContext.Roles.FirstOrDefaultAsync(r => r.Name == "Manager");
+                        newManager.UserAccount.Role = managerRole;
+                        newManager.UserAccount.RoleID = managerRole.ID;
+                        department.ManagerId = newManagerId; // Update department's manager reference
                     }
                 }
-
-                // Promote the new manager
-                var newManager = await _dbContext.Employees.Include(e => e.UserAccount).FirstOrDefaultAsync(e => e.Id == newManagerId);
-                if (newManager != null)
+                else if (!department.ManagerId.HasValue)
                 {
-                    var managerRole = await _dbContext.Roles.FirstOrDefaultAsync(r => r.Name == "Manager");
-                    newManager.UserAccount.Role = managerRole;
-                    department.ManagerId = newManagerId; // Update department's manager reference
+                    // Promote new manager if there is no current manager
+                    var newManager = await _dbContext.Employees.Include(e => e.UserAccount).FirstOrDefaultAsync(e => e.Id == newManagerId);
+                    if (newManager != null)
+                    {
+                        var managerRole = await _dbContext.Roles.FirstOrDefaultAsync(r => r.Name == "Manager");
+                        newManager.UserAccount.Role = managerRole;
+                        newManager.UserAccount.RoleID = managerRole.ID;
+                        department.ManagerId = newManagerId; // Update department's manager reference
+                    }
                 }
             }
             else if (department.ManagerId.HasValue)
@@ -266,9 +285,11 @@ namespace DataAccess.Repository
                 {
                     var employeeRole = await _dbContext.Roles.FirstOrDefaultAsync(r => r.Name == "Employee");
                     currentManager.UserAccount.Role = employeeRole;
+                    currentManager.UserAccount.RoleID = employeeRole.ID;
                     department.ManagerId = null; // Clear the manager reference as there is no manager now
                 }
             }
+
 
             await _dbContext.SaveChangesAsync();
             return new { message = "Update Team Successfully" };

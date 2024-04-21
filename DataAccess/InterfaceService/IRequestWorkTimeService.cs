@@ -10,8 +10,5 @@ namespace DataAccess.InterfaceService
         Task<object> EditRequestWorkTime(RequestWorkTimeDTO dto);
         List<RequestWorkTimeDTO> GetAllRequestWorkTime(string? nameSearch, int? status, string? month, Guid? employeeIdd);
 
-        // Empty interface
-        object GetRequestWorkTimeOfEmployeeById(Guid employeeId);
-        List<WorkslotEmployeeDTO> GetWorkslotEmployeesWithLessThanNineHours(Guid employeeId);
     }
 }

@@ -36,7 +36,7 @@ namespace TimeKeepingSystem.Controllers
         {
             try
             {
-                return Ok(_service.GetRequestWorkTimeOfEmployeeById(employeeId));
+                return Ok(_repository.GetRequestWorkTimeOfEmployeeById(employeeId));
             } catch(Exception ex)
             {
                 return BadRequest(ex.Message);
@@ -55,11 +55,11 @@ namespace TimeKeepingSystem.Controllers
         }
 
         [HttpGet("get-workslot-lack-time-of-employee")]
-        public ActionResult<List<WorkslotEmployeeDTO>> GetWorkslotEmployeesWithLessThanNineHours(Guid employeeId)
+        public ActionResult<List<WorkslotEmployeeDTO>> GetWorkslotEmployeesWithLessThanNineHours(Guid employeeId, bool? isWorkLate, bool? isLeaveSoon, bool? isNotCheckIn, bool? isNotCheckOut)
         {
             try
             {
-                return Ok(_service.GetWorkslotEmployeesWithLessThanNineHours(employeeId));
+                return Ok(_repository.GetWorkslotEmployeesWithLessThanNineHours(employeeId, isWorkLate, isLeaveSoon, isNotCheckIn, isNotCheckOut));
             } catch(Exception ex)
             {
                 return BadRequest(ex.Message);
@@ -71,7 +71,7 @@ namespace TimeKeepingSystem.Controllers
         {
             try
             {
-                return Ok(_service.GetAllRequestWorkTime(nameSearch, status, month, employeeId));
+                return Ok(_repository.GetAllRequestWorkTime(nameSearch, status, month, employeeId));
             } catch(Exception ex)
             {
                 return BadRequest(ex.Message);

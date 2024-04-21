@@ -33,11 +33,6 @@ namespace DataAccess.Service
             return await _requestWorkTimeRepository.EditRequestWorkTime(dto);
         }
 
-        public List<WorkslotEmployeeDTO> GetWorkslotEmployeesWithLessThanNineHours(Guid employeeId)
-        {
-            return _requestWorkTimeRepository.GetWorkslotEmployeesWithLessThanNineHours(employeeId);
-        }
-
         public List<RequestWorkTimeDTO> GetAllRequestWorkTime(string? nameSearch, int? status, string? month, Guid? employeeId)
         {
             return _requestWorkTimeRepository.GetAllRequestWorkTime(nameSearch, status, month, employeeId);

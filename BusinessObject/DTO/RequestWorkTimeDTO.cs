@@ -28,6 +28,7 @@ namespace BusinessObject.DTO
         public string? linkFile { get; set; }
         public string? submitDate { get; set; }
         public string? reasonReject { get; set; }
+        public Guid? deciderId { get; set; }
 
     }
 }

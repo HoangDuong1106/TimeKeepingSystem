@@ -351,10 +351,10 @@ namespace DataAccess.Repository
         //    return result;
         //}
 
-        public List<WorkslotEmployeeDTO> GetWorkslotEmployeesWithLessThanNineHours(Guid employeeId)
+        public List<WorkslotEmployeeDTO> GetWorkslotEmployeesWithLessThanNineHours(Guid employeeId, bool? isWorkLate = false, bool? isLeaveSoon = false, bool? isNotCheckIn = false, bool? isNotCheckOut = false)
         {
             var workslotEmployees = _dbContext.WorkslotEmployees
-                .Include(w => w.Employee)
+                .Include(w => w.Employee).ThenInclude(e => e.Department)
                 .Include(w => w.Workslot)
                 .Include(w => w.AttendanceStatus)
                 .ThenInclude(a => a.WorkingStatus)
@@ -385,8 +385,10 @@ namespace DataAccess.Repository
                             SlotEnd = afternoonSlot.Workslot.ToHour,
                             CheckInTime = morningSlot.CheckInTime,
                             CheckOutTime = afternoonSlot.CheckOutTime,
-                            TimeLeaveEarly = (DateTime.ParseExact(afternoonSlot.Workslot.ToHour, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(afternoonSlot.CheckOutTime, "HH:mm", CultureInfo.InvariantCulture)).TotalHours,
-                            TimeComeLate = (DateTime.ParseExact(morningSlot.CheckInTime, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(morningSlot.Workslot.FromHour, "HH:mm", CultureInfo.InvariantCulture)).TotalHours,
+                            TimeLeaveEarly = (DateTime.ParseExact(afternoonSlot.Workslot.ToHour, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(afternoonSlot.CheckOutTime, "HH:mm", CultureInfo.InvariantCulture)).TotalHours > 0 ? (DateTime.ParseExact(afternoonSlot.Workslot.ToHour, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(afternoonSlot.CheckOutTime, "HH:mm", CultureInfo.InvariantCulture)).ToString(@"hh\:mm") : null,
+                            TimeComeLate = (DateTime.ParseExact(morningSlot.CheckInTime, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(morningSlot.Workslot.FromHour, "HH:mm", CultureInfo.InvariantCulture)).TotalHours > 0 ? (DateTime.ParseExact(morningSlot.CheckInTime, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(morningSlot.Workslot.FromHour, "HH:mm", CultureInfo.InvariantCulture)).ToString(@"hh\:mm") : null,
+                            deciderId = request.EmployeeIdLastDecider,
+                            deciderName = request.EmployeeIdLastDecider != null ? _dbContext.Employees.FirstOrDefault(e => e.Id == request.EmployeeIdLastDecider)?.FirstName : null,
                             statusName = request.Status.ToString(),
                             reason = request.Reason,
                             linkFile = request.PathAttachmentFile
@@ -394,6 +396,10 @@ namespace DataAccess.Repository
                     }
                     else
                     {
+                        //if (afternoonSlot.Employee.DepartmentId == null) continue;
+                        var deciderId = _dbContext.Departments.FirstOrDefault(d => d.Id == afternoonSlot.Employee.DepartmentId)?.ManagerId;
+                        var decider = deciderId != null ? _dbContext.Employees.FirstOrDefault(e => e.Id == deciderId) : null;
+                        var deciderName = deciderId != null ? decider?.FirstName + " " + decider?.LastName : null;
                         result.Add(new WorkslotEmployeeDTO
                         {
                             workslotEmployeeId = afternoonSlot.Id,
@@ -402,8 +408,10 @@ namespace DataAccess.Repository
                             SlotEnd = afternoonSlot.Workslot.ToHour,
                             CheckInTime = morningSlot.CheckInTime,
                             CheckOutTime = afternoonSlot.CheckOutTime,
-                            TimeLeaveEarly = (DateTime.ParseExact(afternoonSlot.Workslot.ToHour, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(afternoonSlot.CheckOutTime, "HH:mm", CultureInfo.InvariantCulture)).TotalHours,
-                            TimeComeLate = (DateTime.ParseExact(morningSlot.CheckInTime, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(morningSlot.Workslot.FromHour, "HH:mm", CultureInfo.InvariantCulture)).TotalHours,
+                            TimeLeaveEarly = (DateTime.ParseExact(afternoonSlot.Workslot.ToHour, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(afternoonSlot.CheckOutTime, "HH:mm", CultureInfo.InvariantCulture)).TotalHours > 0 ? (DateTime.ParseExact(afternoonSlot.Workslot.ToHour, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(afternoonSlot.CheckOutTime, "HH:mm", CultureInfo.InvariantCulture)).ToString(@"hh\:mm") : null,
+                            TimeComeLate = (DateTime.ParseExact(morningSlot.CheckInTime, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(morningSlot.Workslot.FromHour, "HH:mm", CultureInfo.InvariantCulture)).TotalHours > 0 ? (DateTime.ParseExact(morningSlot.CheckInTime, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(morningSlot.Workslot.FromHour, "HH:mm", CultureInfo.InvariantCulture)).ToString(@"hh\:mm") : null,
+                            deciderId = deciderId,
+                            deciderName = deciderName,
                             statusName = "Lack Of Work Time",
                             reason = null,
                             linkFile = null
@@ -494,6 +502,7 @@ namespace DataAccess.Repository
                     employeeId = employee?.Id ?? Guid.Empty,
                     employeeName = employee?.FirstName + " " + employee?.LastName,
                     employeeNumber = employee?.EmployeeNumber,
+                    deciderId = r.EmployeeIdLastDecider,
                     RealHourStart = r.RequestWorkTime?.RealHourStart,
                     RealHourEnd = r.RequestWorkTime?.RealHourEnd,
                     NumberOfComeLateHour = r.RequestWorkTime?.NumberOfComeLateHour ?? 0,

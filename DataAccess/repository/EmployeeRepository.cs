@@ -32,7 +32,7 @@ namespace DataAccess.Repository
                 PhoneNumber = a.PhoneNumber,
                 RoleName = a.UserAccount.Role.Name,
                 RoleId = a.UserAccount.RoleID,
-                ManagerId = a.DepartmentId != null ? _dbContext.Employees.Include(e => e.UserAccount).ThenInclude(u => u.Role).FirstOrDefault(e => e.DepartmentId == a.DepartmentId && e.UserAccount.Role.Name == "Manager") != null ? _dbContext.Employees.Include(e => e.UserAccount).ThenInclude(u => u.Role).FirstOrDefault(e => e.DepartmentId == a.DepartmentId && e.UserAccount.Role.Name == "Manager").Id : Guid.Empty : null,
+                ManagerId = a.DepartmentId != null ? _dbContext.Employees.Include(e => e.UserAccount).ThenInclude(u => u.Role).FirstOrDefault(e => e.DepartmentId == a.DepartmentId && e.UserAccount.Role.Name == "Manager") != null ? _dbContext.Employees.Include(e => e.UserAccount).ThenInclude(u => u.Role).FirstOrDefault(e => e.DepartmentId == a.DepartmentId && e.UserAccount.Role.Name == "Manager").Id : null : null,
                 DepartmentId = (Guid)(a.DepartmentId ?? null),
                 DepartmentName = a.Department.Name,
                 EmployeeStatus = (int?)a.EmployeeStatus,
