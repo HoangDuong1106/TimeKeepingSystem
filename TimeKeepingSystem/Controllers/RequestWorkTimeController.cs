@@ -1,5 +1,6 @@
 
 using BusinessObject.DTO;
+using DataAccess.InterfaceRepository;
 using DataAccess.InterfaceService;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,10 +11,12 @@ namespace TimeKeepingSystem.Controllers
     public class RequestWorkTimeController : ControllerBase
     {
         private readonly IRequestWorkTimeService _service;
+        private readonly IRequestWorkTimeRepository _repository;
 
-        public RequestWorkTimeController(IRequestWorkTimeService service)
+        public RequestWorkTimeController(IRequestWorkTimeService service, IRequestWorkTimeRepository repository)
         {
             _service = service;
+            _repository = repository;
         }
 
         [HttpPost("create-request-work-time-of-employee")]
@@ -82,6 +85,32 @@ namespace TimeKeepingSystem.Controllers
             {
                 return Ok(await _service.ApproveRequestWorkTime(requestId));
             } catch(Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPatch("reject-work-time-request")]
+        public async Task<object> RejectWorkTimeRequest(RequestReasonDTO requestObj)
+        {
+            try
+            {
+                return Ok(await _repository.RejectWorkTimeRequest(requestObj));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPatch("cancel-approved-work-time-request")]
+        public async Task<object> CancelApprovedWorkTimeRequest(RequestReasonDTO requestObj)
+        {
+            try
+            {
+                return Ok(await _repository.CancelApprovedWorkTimeRequest(requestObj));
+            }
+            catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }

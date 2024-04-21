@@ -570,35 +570,103 @@ namespace DataAccess.Repository
             return new { message = "RequestWorkTime approved and WorkslotEmployee updated successfully" };
         }
 
-        public async Task<bool> SendWorkTimeRequestStatusToFirebase(Guid requestId)
+        public async Task<object> RejectWorkTimeRequest(RequestReasonDTO requestObj)
         {
+            Guid requestId = requestObj.requestId;
+            string reason = requestObj.reason;
+
+            // Retrieve the work time request by requestId
             var request = await _dbContext.Requests
-                .Include(r => r.RequestWorkTime)
-                .FirstOrDefaultAsync(r => r.Id == requestId);
+                                           .Include(r => r.RequestWorkTime)
+                                           .FirstOrDefaultAsync(r => r.Id == requestId);
 
             if (request == null)
             {
-                return false; // Request not found
+                throw new Exception("Request not found.");
             }
 
-            var firebaseData = new
+            if (request.RequestWorkTime == null)
             {
-                requestId = request.Id,
-                employeeId = request.EmployeeSendRequestId,
-                workTimeId = request.RequestWorkTimeId,
-                status = request.Status.ToString(),
-                reason = request.Reason,
-                realHourStart = request.RequestWorkTime.RealHourStart,
-                realHourEnd = request.RequestWorkTime.RealHourEnd,
-                dateOfWorkTime = request.RequestWorkTime.DateOfSlot
-            };
+                throw new Exception("Work Time Request not found.");
+            }
 
-            var json = JsonSerializer.Serialize(firebaseData);
-            var httpClient = new HttpClient();
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var result = await httpClient.PostAsync("https://nextjs-course-f2de1-default-rtdb.firebaseio.com/workTimeRequests.json", content);
+            // Check if the request is indeed approved; only approved requests can be rejected
+            if (request.Status == RequestStatus.Approved)
+            {
+                throw new Exception("Only Non-approved requests can be rejected.");
+            }
 
-            return result.IsSuccessStatusCode;
+            // Set the Request status to Rejected based on your application logic
+            request.Status = RequestStatus.Rejected;
+            request.Message = reason;
+            request.EmployeeIdLastDecider = requestObj.employeeIdDecider;
+
+            // Save the changes to the database
+            await _dbContext.SaveChangesAsync();
+            await SendRequestWorkTimeToEmployeeFirebase(requestId);
+
+            return new { message = "Work Time request rejected successfully." };
+        }
+
+        public async Task<object> CancelApprovedWorkTimeRequest(RequestReasonDTO requestObj)
+        {
+            Guid requestId = requestObj.requestId;
+            string reason = requestObj.reason;
+
+            // Retrieve the request by requestId
+            var request = await _dbContext.Requests
+                                           .Include(r => r.RequestWorkTime)
+                                           .FirstOrDefaultAsync(r => r.Id == requestId);
+
+            if (request == null)
+            {
+                throw new Exception("Request not found.");
+            }
+
+            if (request.RequestWorkTime == null)
+            {
+                throw new Exception("Work Time Request not found.");
+            }
+
+            // Check if the request is indeed approved; only approved requests can be cancelled
+            if (request.Status != RequestStatus.Approved)
+            {
+                throw new Exception("Only approved requests can be cancelled.");
+            }
+
+            // Set the Request status to Cancelled based on your application logic
+            request.Status = RequestStatus.Cancel; // Assuming Cancelled is a defined status in your system
+            request.Message = reason;
+            request.EmployeeIdLastDecider = requestObj.employeeIdDecider;
+
+            // Find all WorkslotEmployees that were updated due to this request and reset their attendance status
+            var dateOfRequest = request.RequestWorkTime.DateOfSlot;
+
+            var workslotEmployees = await _dbContext.WorkslotEmployees
+                                                    .Include(we => we.Workslot)
+                                                    .Where(we => we.EmployeeId == request.EmployeeSendRequestId && we.Workslot.DateOfSlot == dateOfRequest)
+                                                    .ToListAsync();
+
+            // Assuming you have a default or previous attendance status to reset to; adjust this logic as necessary
+            var defaultAttendanceStatus = await _dbContext.AttendanceStatuses.Include(ass => ass.WorkingStatus)
+                                                               .FirstOrDefaultAsync(att => att.WorkingStatus != null && att.WorkingStatus.Name == "Not Work Yet");
+
+            if (defaultAttendanceStatus == null)
+            {
+                throw new Exception("Default attendance status not found.");
+            }
+
+            foreach (var workslotEmployee in workslotEmployees)
+            {
+                workslotEmployee.AttendanceStatus = defaultAttendanceStatus;
+                workslotEmployee.AttendanceStatusId = defaultAttendanceStatus.Id;
+            }
+
+            // Save the changes to the database
+            await _dbContext.SaveChangesAsync();
+            await SendRequestWorkTimeToEmployeeFirebase(requestId);
+
+            return new { message = "Work Time request cancelled successfully." };
         }
 
         public async Task<bool> SendRequestWorkTimeToManagerFirebase(Guid requestId)
@@ -617,6 +685,7 @@ namespace DataAccess.Repository
         {
             var request = await _dbContext.Requests
                 .Include(r => r.RequestWorkTime)
+                .Include(r => r.EmployeeSendRequest)
                 .FirstOrDefaultAsync(r => r.Id == requestId);
 
             if (request == null)
@@ -634,7 +703,7 @@ namespace DataAccess.Repository
                 requestId = request.Id,
                 employeeSenderId = request.EmployeeSendRequestId,
                 employeeSenderName = request.EmployeeSendRequest?.FirstName + " " + request.EmployeeSendRequest?.LastName,
-                empluyeeSenderNumber = request.EmployeeSendRequest?.EmployeeNumber,
+                employeeSenderNumber = request.EmployeeSendRequest?.EmployeeNumber,
                 employeeDeciderId = request.EmployeeIdLastDecider,
                 employeeDeciderName = manager?.FirstName + " " + manager?.LastName,
                 workTimeId = request.RequestWorkTimeId,

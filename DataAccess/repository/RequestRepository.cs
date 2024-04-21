@@ -175,5 +175,81 @@ namespace DataAccess.Repository
             return combinedRequests;
         }
 
+        public async Task<List<Guid>> FindRequestsWithMissingEmployees()
+        {
+            // Query all requests where the corresponding employee does not exist in the Employees table
+            var invalidRequests = await _dbContext.Requests
+                .Where(r => !_dbContext.Employees.Any(e => e.Id == r.EmployeeSendRequestId))
+                .Select(r => r.Id)
+                .ToListAsync();
+
+            return invalidRequests;
+        }
+
+        public async Task<int> SoftDeleteInvalidRequests()
+        {
+            using (var transaction = _dbContext.Database.BeginTransaction())
+            {
+                try
+                {
+                    // Find requests where there is no corresponding employee
+                    var invalidRequests = await _dbContext.Requests
+                        .Include(r => r.RequestLeave)
+                            .ThenInclude(rl => rl.WorkslotEmployees)
+                        .Include(r => r.RequestWorkTime)
+                            .ThenInclude(rwt => rwt.WorkslotEmployee)
+                        .Where(r => !_dbContext.Employees.Any(e => e.Id == r.EmployeeSendRequestId))
+                        .ToListAsync();
+
+                    foreach (var request in invalidRequests)
+                    {
+                        // Soft delete the request
+                        request.IsDeleted = true;
+
+                        // Soft delete related RequestLeave and its WorkslotEmployees
+                        if (request.RequestLeave != null)
+                        {
+                            request.RequestLeave.IsDeleted = true;
+                            foreach (var we in request.RequestLeave.WorkslotEmployees)
+                            {
+                                we.IsDeleted = true;
+                            }
+                        }
+
+                        // Soft delete related RequestWorkTime and its WorkslotEmployees
+                        if (request.RequestWorkTime != null)
+                        {
+                            request.RequestWorkTime.IsDeleted = true;
+                            if (request.RequestWorkTime.WorkslotEmployee != null)
+                            {
+                                request.RequestWorkTime.WorkslotEmployee.IsDeleted = true;
+                            }
+                            
+                        }
+
+                        // Soft delete RequestOverTime if needed
+                        if (request.RequestOverTime != null)
+                        {
+                            request.RequestOverTime.IsDeleted = true;
+                        }
+                    }
+
+                    // Save changes to the database
+                    int changes = await _dbContext.SaveChangesAsync();
+
+                    // Commit transaction
+                    transaction.Commit();
+
+                    return changes; // Return the number of database entries changed
+                }
+                catch (Exception ex)
+                {
+                    // Roll back the transaction if an exception occurs
+                    transaction.Rollback();
+                    throw new Exception("Failed to soft delete invalid requests: " + ex.Message, ex);
+                }
+            }
+        }
+
     }
 }

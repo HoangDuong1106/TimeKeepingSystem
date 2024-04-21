@@ -33,6 +33,32 @@ namespace TimeKeepingSystem.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        [HttpGet("get-all-request-id-not-not-have-employee")]
+        public async Task<ActionResult<List<Guid>>> FindRequestsWithMissingEmployees()
+        {
+            try
+            {
+                return Ok(await _requestRepository.FindRequestsWithMissingEmployees());
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpDelete("clean-invalid-request")]
+        public async Task<ActionResult<int>> SoftDeleteInvalidRequests()
+        {
+            try
+            {
+                return Ok(await _requestRepository.SoftDeleteInvalidRequests());
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }
 
