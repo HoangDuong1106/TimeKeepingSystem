@@ -381,12 +381,11 @@ namespace DataAccess.Repository
                             workslotEmployeeId = afternoonSlot.Id,
                             Date = afternoonSlot.Workslot.DateOfSlot,
                             SlotStart = morningSlot.Workslot.FromHour,
-                            RequestId = request.Id,
                             SlotEnd = afternoonSlot.Workslot.ToHour,
                             CheckInTime = morningSlot.CheckInTime,
                             CheckOutTime = afternoonSlot.CheckOutTime,
-                            TimeLeaveEarly = (DateTime.ParseExact(afternoonSlot.Workslot.ToHour, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(afternoonSlot.CheckOutTime, "HH:mm", CultureInfo.InvariantCulture)).TotalHours > 0 ? (DateTime.ParseExact(afternoonSlot.Workslot.ToHour, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(afternoonSlot.CheckOutTime, "HH:mm", CultureInfo.InvariantCulture)).ToString(@"hh\:mm") : null,
-                            TimeComeLate = (DateTime.ParseExact(morningSlot.CheckInTime, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(morningSlot.Workslot.FromHour, "HH:mm", CultureInfo.InvariantCulture)).TotalHours > 0 ? (DateTime.ParseExact(morningSlot.CheckInTime, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(morningSlot.Workslot.FromHour, "HH:mm", CultureInfo.InvariantCulture)).ToString(@"hh\:mm") : null,
+                            TimeLeaveEarly = CalculateTimeDifference(afternoonSlot.Workslot.ToHour, afternoonSlot.CheckOutTime, true),
+                            TimeComeLate = CalculateTimeDifference(morningSlot.CheckInTime, morningSlot.Workslot.FromHour, false),
                             deciderId = request.EmployeeIdLastDecider,
                             deciderName = request.EmployeeIdLastDecider != null ? _dbContext.Employees.FirstOrDefault(e => e.Id == request.EmployeeIdLastDecider)?.FirstName : null,
                             statusName = request.Status.ToString(),
@@ -408,8 +407,8 @@ namespace DataAccess.Repository
                             SlotEnd = afternoonSlot.Workslot.ToHour,
                             CheckInTime = morningSlot.CheckInTime,
                             CheckOutTime = afternoonSlot.CheckOutTime,
-                            TimeLeaveEarly = (DateTime.ParseExact(afternoonSlot.Workslot.ToHour, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(afternoonSlot.CheckOutTime, "HH:mm", CultureInfo.InvariantCulture)).TotalHours > 0 ? (DateTime.ParseExact(afternoonSlot.Workslot.ToHour, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(afternoonSlot.CheckOutTime, "HH:mm", CultureInfo.InvariantCulture)).ToString(@"hh\:mm") : null,
-                            TimeComeLate = (DateTime.ParseExact(morningSlot.CheckInTime, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(morningSlot.Workslot.FromHour, "HH:mm", CultureInfo.InvariantCulture)).TotalHours > 0 ? (DateTime.ParseExact(morningSlot.CheckInTime, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(morningSlot.Workslot.FromHour, "HH:mm", CultureInfo.InvariantCulture)).ToString(@"hh\:mm") : null,
+                            TimeLeaveEarly = CalculateTimeDifference(afternoonSlot.Workslot.ToHour, afternoonSlot.CheckOutTime, true),
+                            TimeComeLate = CalculateTimeDifference(morningSlot.CheckInTime, morningSlot.Workslot.FromHour, false),
                             deciderId = deciderId,
                             deciderName = deciderName,
                             statusName = "Lack Of Work Time",
@@ -420,8 +419,41 @@ namespace DataAccess.Repository
                 }
             }
 
-            return result;
+            // Apply all filters before converting to list
+            IEnumerable<WorkslotEmployeeDTO> filteredResults = result.AsEnumerable();
+            if (isWorkLate.GetValueOrDefault())
+            {
+                filteredResults = filteredResults.Where(r => TimeSpan.Parse(r.TimeComeLate).TotalMinutes > 0);
+            }
+            if (isLeaveSoon.GetValueOrDefault())
+            {
+                filteredResults = filteredResults.Where(r => TimeSpan.Parse(r.TimeLeaveEarly).TotalMinutes > 0);
+            }
+            if (isNotCheckIn.GetValueOrDefault())
+            {
+                filteredResults = filteredResults.Where(r => string.IsNullOrEmpty(r.CheckInTime));
+            }
+            if (isNotCheckOut.GetValueOrDefault())
+            {
+                filteredResults = filteredResults.Where(r => string.IsNullOrEmpty(r.CheckOutTime));
+            }
+
+            return filteredResults.ToList();
         }
+
+        private string CalculateTimeDifference(string expectedTime, string actualTime, bool isLate)
+        {
+            if (string.IsNullOrEmpty(actualTime) || string.IsNullOrEmpty(expectedTime))
+                return "00:00";
+
+            var expected = DateTime.ParseExact(expectedTime, "HH:mm", CultureInfo.InvariantCulture);
+            var actual = DateTime.ParseExact(actualTime, "HH:mm", CultureInfo.InvariantCulture);
+            var timeSpan = isLate ? actual - expected : expected - actual;
+
+            return timeSpan.TotalMinutes > 0 ? timeSpan.ToString(@"hh\:mm") : "00:00";
+        }
+
+
 
         public List<RequestWorkTimeDTO> GetAllRequestWorkTime(string? nameSearch, int? status, string? month, Guid? employeeIdd = null)
         {

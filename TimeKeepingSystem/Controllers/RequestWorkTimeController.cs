@@ -55,7 +55,7 @@ namespace TimeKeepingSystem.Controllers
         }
 
         [HttpGet("get-workslot-lack-time-of-employee")]
-        public ActionResult<List<WorkslotEmployeeDTO>> GetWorkslotEmployeesWithLessThanNineHours(Guid employeeId, bool? isWorkLate, bool? isLeaveSoon, bool? isNotCheckIn, bool? isNotCheckOut)
+        public ActionResult<List<WorkslotEmployeeDTO>> GetWorkslotEmployeesWithLessThanNineHours(Guid employeeId, bool? isWorkLate = false, bool? isLeaveSoon = false, bool? isNotCheckIn = false, bool? isNotCheckOut = false)
         {
             try
             {
