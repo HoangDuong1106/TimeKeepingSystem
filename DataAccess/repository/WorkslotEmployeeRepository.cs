@@ -371,9 +371,11 @@ namespace DataAccess.Repository
                 allEmployeeResults.Add(new
                 {
                     Name = employee.FirstName + " " + employee.LastName,
+                    EmployeeNumber = employee.EmployeeNumber,
                     Working = groupedWorkSlotEmployees,
                     TotalOvertime = ConvertHoursToTimeString(totalOvertime),  // converted to "HH:mm"
                     TotalWorkedHours = ConvertHoursToTimeString(totalWorkedHours),
+                    TeamId = employee.DepartmentId ?? null,
                     TeamName = TeamName// sum of Duration converted to "HH:mm"
                 });
             }
