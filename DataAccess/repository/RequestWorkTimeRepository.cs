@@ -240,10 +240,10 @@ namespace DataAccess.Repository
 
         //        if (duration < 4)
         //        {
-        //            var requestWorkTime = _dbContext.RequestWorkTimes.FirstOrDefault(rw => rw.WorkslotEmployeeId == workslotEmployee.Id);
-        //            if (requestWorkTime != null)
+        //            var request = _dbContext.RequestWorkTimes.FirstOrDefault(rw => rw.WorkslotEmployeeId == workslotEmployee.Id);
+        //            if (request != null)
         //            {
-        //                var request = _dbContext.Requests.FirstOrDefault(r => r.RequestWorkTimeId == requestWorkTime.Id);
+        //                var request = _dbContext.Requests.FirstOrDefault(r => r.RequestWorkTimeId == request.Id);
         //                result.Add(new WorkslotEmployeeDTO
         //                {
         //                    workslotEmployeeId = workslotEmployee.Id,
@@ -307,10 +307,10 @@ namespace DataAccess.Repository
 
         //            if (duration < 9)
         //            {
-        //                var requestWorkTime = _dbContext.RequestWorkTimes.FirstOrDefault(rw => rw.WorkslotEmployeeId == afternoonSlot.Id);
-        //                if (requestWorkTime != null)
+        //                var request = _dbContext.RequestWorkTimes.FirstOrDefault(rw => rw.WorkslotEmployeeId == afternoonSlot.Id);
+        //                if (request != null)
         //                {
-        //                    var request = _dbContext.Requests.FirstOrDefault(r => r.RequestWorkTimeId == requestWorkTime.Id);
+        //                    var request = _dbContext.Requests.FirstOrDefault(r => r.RequestWorkTimeId == request.Id);
         //                    result.Add(new WorkslotEmployeeDTO
         //                    {
         //                        workslotEmployeeId = afternoonSlot.Id,
@@ -768,6 +768,48 @@ namespace DataAccess.Repository
             var result = await httpClient.PutAsync($"https://nextjs-course-f2de1-default-rtdb.firebaseio.com{path}/{reverseTimestamp}.json", content);
 
             return result.IsSuccessStatusCode;
+        }
+
+        public async Task<bool> SoftDeleteRequestWorkTime(Guid requestId)
+        {
+            using (var transaction = _dbContext.Database.BeginTransaction())
+            {
+                try
+                {
+                    // Fetch the request work time and the related request
+                    var request = await _dbContext.Requests.Include(rwt => rwt.RequestWorkTime).FirstOrDefaultAsync(rwt => rwt.Id == requestId);
+                    if (request == null)
+                    {
+                        throw new Exception("RequestWorkTime not found.");
+                    }
+
+                    // Mark the RequestWorkTime as deleted
+                    request.IsDeleted = true;
+
+                    // If there's a linked Request, mark it as deleted too
+                    if (request.RequestWorkTime != null)
+                    {
+                        request.RequestWorkTime.IsDeleted = true;
+
+                        // Fetch related WorkslotEmployees if any and mark them as deleted
+                        var workslotEmployees = await _dbContext.WorkslotEmployees
+                                                                .Where(we => we.Id == request.RequestWorkTime.WorkslotEmployeeId)
+                                                                .ToListAsync();
+
+                        workslotEmployees.ForEach(we => we.IsDeleted = true);
+                    }
+
+                    // Save changes to the database
+                    await _dbContext.SaveChangesAsync();
+                    transaction.Commit();
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    throw new Exception("Failed to delete RequestWorkTime: " + ex.Message);
+                }
+            }
         }
 
     }

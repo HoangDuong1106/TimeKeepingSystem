@@ -3,6 +3,7 @@ using BusinessObject.DTO;
 using DataAccess.InterfaceRepository;
 using DataAccess.InterfaceService;
 using Microsoft.AspNetCore.Mvc;
+using System.Globalization;
 
 namespace TimeKeepingSystem.Controllers
 {
@@ -36,6 +37,19 @@ namespace TimeKeepingSystem.Controllers
         public async Task<ActionResult<int>> RemoveDuplicateWorkSlots()
         {
             return await _repository.RemoveDuplicateWorkSlots();
+        }
+
+        [HttpGet("get-workslot-of-department-in-one-month-for-manager")]
+        public async Task<ActionResult<List<object>>> GetWorkSlotsForDepartmentOrEmployee(Guid? departmentId, string month, Guid? employeeId)
+        {
+            try
+            {
+                return Ok(await _repository.GetWorkSlotsForDepartmentOrEmployee(new CreateWorkSlotRequest() { departmentId = departmentId, month = month, employeeId= employeeId }));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }

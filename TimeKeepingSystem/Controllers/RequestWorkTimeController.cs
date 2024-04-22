@@ -116,6 +116,19 @@ namespace TimeKeepingSystem.Controllers
             }
         }
 
+        [HttpDelete("delete-work-time-request")]
+        public async Task<ActionResult<bool>> SoftDeleteRequestWorkTime(Guid requestId)
+        {
+            try
+            {
+                return Ok(await _repository.SoftDeleteRequestWorkTime(requestId));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
     }
 }
 

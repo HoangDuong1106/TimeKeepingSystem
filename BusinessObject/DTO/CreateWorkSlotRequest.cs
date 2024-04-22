@@ -10,5 +10,6 @@ namespace BusinessObject.DTO
     {
         public Guid? departmentId { get; set; }
         public string? month { get; set; }
+        public Guid? employeeId { get; set; }  // Add this new field
     }
 }

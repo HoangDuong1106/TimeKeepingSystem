@@ -125,16 +125,21 @@ namespace DataAccess.Repository
                                                               .Distinct()
                                                               .ToList();
 
-                    // Find all WorkslotEmployee entries that are associated with the duplicate work slots
-                    var workslotEmployeeIds = _dbContext.WorkslotEmployees
-                                                        .Where(we => allDuplicates.Select(d => d.Id).Contains(we.WorkslotId))
-                                                        .ToList();
+                    // Mark duplicates as deleted
+                    foreach (var dup in allDuplicates)
+                    {
+                        dup.IsDeleted = true;
+                    }
 
-                    // Remove WorkslotEmployee entries
-                    _dbContext.WorkslotEmployees.RemoveRange(workslotEmployeeIds);
+                    // Find all WorkslotEmployee entries that are associated with the duplicate work slots, have null Workslot, or have null Employee, and mark them as deleted
+                    var workslotEmployees = _dbContext.WorkslotEmployees.Include(we => we.Workslot).Include(we => we.Employee)
+                                                      .Where(we => allDuplicates.Select(d => d.Id).Contains(we.WorkslotId) || we.Workslot == null || we.Employee == null)
+                                                      .ToList();
 
-                    // Remove the duplicate work slots
-                    _dbContext.Workslots.RemoveRange(allDuplicates);
+                    foreach (var we in workslotEmployees)
+                    {
+                        we.IsDeleted = true;
+                    }
 
                     // Save changes to the database
                     int changes = await _dbContext.SaveChangesAsync();
@@ -144,11 +149,11 @@ namespace DataAccess.Repository
 
                     return changes;  // Return the number of changes made to the database
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
                     // Rollback the transaction if an exception occurs
                     transaction.Rollback();
-                    throw;  // Rethrow the exception to handle it further up the call stack if necessary
+                    throw new Exception("Failed to remove duplicate work slots: " + ex.Message);
                 }
             }
         }
@@ -266,5 +271,334 @@ namespace DataAccess.Repository
 
             return isHoliday;
         }
+
+        public async Task<List<object>> GetWorkSlotsForDepartmentOrEmployee(CreateWorkSlotRequest request)
+        {
+            DateTime startDate = DateTime.ParseExact(request.month, "yyyy/MM/dd", CultureInfo.InvariantCulture);
+            DateTime endDate = startDate.AddMonths(1).AddDays(-1);
+
+            if (request.employeeId.HasValue)
+            {
+                var employee = await _dbContext.Employees
+                    .Include(e => e.UserAccount).ThenInclude(ua => ua.Role)
+                    .FirstOrDefaultAsync(e => e.Id == request.employeeId.Value);
+
+                if (employee == null)
+                    throw new Exception("Employee not found.");
+
+                var role = employee.UserAccount.Role.Name;
+
+                // Determine the response based on the role
+                switch (role)
+                {
+                    case "HR":
+                        return await GenerateHRView(request.departmentId.GetValueOrDefault(), startDate, endDate);
+
+                    case "Manager":
+                        if (employee.DepartmentId.HasValue)
+                        {
+                            return await GenerateManagerView(employee.DepartmentId.Value, startDate, endDate);
+                        }
+                        else
+                        {
+                            throw new Exception("Manager must be assigned to a department.");
+                        }
+
+                    default:
+                        return await GenerateEmployeeView(employee.Id, startDate, endDate);
+                }
+            }
+            else if (request.departmentId.HasValue)
+            {
+                return await GenerateHRView(request.departmentId.Value, startDate, endDate);
+            }
+            else
+            {
+                throw new Exception("Either departmentId or employeeId must be provided.");
+            }
+        }
+
+        private async Task<List<object>> GenerateHRView(Guid departmentId, DateTime startDate, DateTime endDate)
+        {
+            var workDays = await GetWorkDays(departmentId);
+            var response = new List<object>();
+
+            for (DateTime date = startDate; date <= endDate; date = date.AddDays(1))
+            {
+                var slots = await GenerateTeamSlots(departmentId, date, workDays);
+                response.AddRange(slots);
+            }
+
+            return response; // Directly reuse existing functionality for HR, which already handles department-wide slots.
+        }
+
+        private async Task<List<object>> GenerateManagerView(Guid departmentId, DateTime startDate, DateTime endDate)
+        {
+            var workDays = await GetWorkDays(departmentId);
+            var response = new List<object>();
+
+            for (DateTime date = startDate; date <= endDate; date = date.AddDays(1))
+            {
+                var slots = await GenerateTeamSlots(departmentId, date, workDays);
+                response.AddRange(slots);
+            }
+
+            return response;
+        }
+
+        private async Task<List<object>> GenerateEmployeeView(Guid employeeId, DateTime startDate, DateTime endDate)
+        {
+            var employee = await _dbContext.Employees.Include(e => e.Department).FirstOrDefaultAsync(e => e.Id == employeeId);
+            if (employee == null || employee.Department == null)
+                throw new Exception("Employee or their department not found.");
+
+            var workDays = await GetWorkDays(employee.Department.Id);
+            var response = new List<object>();
+
+            for (DateTime date = startDate; date <= endDate; date = date.AddDays(1))
+            {
+                var slots = await GeneratePersonalSlots(employeeId, date, workDays);
+                response.AddRange(slots);
+            }
+
+            return AggregateWorkSlots(response);
+        }
+
+        private async Task<DateStatusDTO> GetWorkDays(Guid departmentId)
+        {
+            var workTrackSetting = await _dbContext.Departments
+                .Where(d => d.Id == departmentId)
+                .Select(d => d.WorkTrackSetting.WorkDateSetting.DateStatus)
+                .FirstOrDefaultAsync();
+
+            if (string.IsNullOrEmpty(workTrackSetting))
+                throw new Exception("Work day settings not found for the department.");
+
+            return JsonSerializer.Deserialize<DateStatusDTO>(workTrackSetting);
+        }
+
+        private async Task<List<object>> GenerateTeamSlots(Guid departmentId, DateTime date, DateStatusDTO workDays)
+        {
+            List<object> slots = new List<object>();
+            bool isWorkDay = (bool)typeof(DateStatusDTO).GetProperty(date.DayOfWeek.ToString())?.GetValue(workDays);
+            bool isHoliday = await IsHoliday(_dbContext, date.ToString("yyyy/MM/dd"));
+
+            var workSlots = _dbContext.Workslots
+                .Where(ws => ws.DateOfSlot.Date == date && ws.DepartmentId == departmentId)
+                .ToList();
+
+            var leaveRequests = _dbContext.Requests
+                .Include(r => r.RequestLeave).ThenInclude(rl => rl.WorkslotEmployees).ThenInclude(we => we.Workslot).Include(r => r.EmployeeSendRequest)
+                .Where(r => r.EmployeeSendRequest.DepartmentId == departmentId && r.Status == RequestStatus.Approved && r.RequestLeave.FromDate <= date && r.RequestLeave.ToDate >= date)
+                .ToList();
+
+            var overtimeRequests = _dbContext.Requests
+                .Include(r => r.RequestOverTime).Include(r => r.EmployeeSendRequest)
+                .Where(r => r.EmployeeSendRequest.DepartmentId == departmentId && r.Status == RequestStatus.Approved && r.RequestOverTime.DateOfOverTime == date)
+                .ToList();
+
+            // Compile information for the department for each day
+            if (!isHoliday)
+            {
+                foreach (var slot in workSlots)
+                {
+                    slots.Add(new
+                    {
+                        title = "Working",
+                        date = date.ToString("yyyy-MM-dd"),
+                        startTime = slot.FromHour,
+                        endTime = slot.ToHour
+                    });
+                }
+
+                foreach (var leave in leaveRequests)
+                {
+                    slots.Add(new
+                    {
+                        title = "Leave",
+                        date = date.ToString("yyyy-MM-dd"),
+                        startTime = leave.RequestLeave.WorkslotEmployees.FirstOrDefault(we => we.Workslot.DateOfSlot.Date == date)?.Workslot?.FromHour,
+                        endTime = leave.RequestLeave.WorkslotEmployees.FirstOrDefault(we => we.Workslot.DateOfSlot.Date == date)?.Workslot?.ToHour,
+                        employeeName = $"{leave.EmployeeSendRequest.FirstName} {leave.EmployeeSendRequest.LastName}"
+                    });
+                }
+
+                foreach (var ot in overtimeRequests)
+                {
+                    slots.Add(new
+                    {
+                        title = "Overtime",
+                        date = date.ToString("yyyy-MM-dd"),
+                        startTime = ot.RequestOverTime.FromHour.ToString("HH:mm"),
+                        endTime = ot.RequestOverTime.ToHour.ToString("HH:mm"),
+                        employeeName = $"{ot.EmployeeSendRequest.FirstName} {ot.EmployeeSendRequest.LastName}"
+                    });
+                }
+            }
+            else
+            {
+                slots.Add(new
+                {
+                    title = "Public Holiday",
+                    date = date.ToString("yyyy-MM-dd"),
+                    startTime = "00:00",
+                    endTime = "00:00"
+                });
+            }
+
+            return slots;
+        }
+
+        private async Task<List<object>> GeneratePersonalSlots(Guid employeeId, DateTime date, DateStatusDTO workDays)
+        {
+            List<object> slots = new List<object>();
+            bool isWorkDay = (bool)typeof(DateStatusDTO).GetProperty(date.DayOfWeek.ToString())?.GetValue(workDays);
+            bool isHoliday = await IsHoliday(_dbContext, date.ToString("yyyy/MM/dd"));
+
+            var workSlots = _dbContext.Workslots
+                .Where(ws => ws.DateOfSlot.Date == date && ws.Department.Employees.Any(e => e.Id == employeeId))
+                .ToList();
+
+            var leaveRequests = _dbContext.Requests
+                .Include(r => r.RequestLeave).ThenInclude(rl => rl.WorkslotEmployees).ThenInclude(we => we.Workslot)
+                .Where(r => r.EmployeeSendRequestId == employeeId && r.Status == RequestStatus.Approved && r.RequestLeave.FromDate <= date && r.RequestLeave.ToDate >= date)
+                .ToList();
+
+            var overtimeRequests = _dbContext.Requests
+                .Include(r => r.RequestOverTime)
+                .Where(r => r.EmployeeSendRequestId == employeeId && r.Status == RequestStatus.Approved && r.RequestOverTime.DateOfOverTime == date)
+                .ToList();
+
+            // Handle work slots, leaves, and overtime
+            if (!isHoliday)
+            {
+                foreach (var slot in workSlots)
+                {
+                    slots.Add(new
+                    {
+                        title = "Working",
+                        date = date.ToString("yyyy-MM-dd"),
+                        startTime = slot.FromHour,
+                        endTime = slot.ToHour
+                    });
+                }
+
+                foreach (var leave in leaveRequests)
+                {
+                    slots.Add(new
+                    {
+                        title = "Leave",
+                        date = date.ToString("yyyy-MM-dd"),
+                        startTime = leave.RequestLeave.WorkslotEmployees.FirstOrDefault(we => we.Workslot.DateOfSlot.Date == date)?.Workslot?.FromHour,
+                        endTime = leave.RequestLeave.WorkslotEmployees.FirstOrDefault(we => we.Workslot.DateOfSlot.Date == date)?.Workslot?.ToHour,
+                        description = leave.Reason
+                    });
+                }
+
+                foreach (var ot in overtimeRequests)
+                {
+                    slots.Add(new
+                    {
+                        title = "Overtime",
+                        date = date.ToString("yyyy-MM-dd"),
+                        startTime = ot.RequestOverTime.FromHour.ToString("HH:mm"),
+                        endTime = ot.RequestOverTime.ToHour.ToString("HH:mm")
+                    });
+                }
+            }
+            else
+            {
+                slots.Add(new
+                {
+                    title = "Public Holiday",
+                    date = date.ToString("yyyy-MM-dd"),
+                    startTime = "00:00",
+                    endTime = "00:00"
+                });
+            }
+
+            return slots;
+        }
+
+        private List<object> AggregateWorkSlots(List<object> slots)
+        {
+            var aggregatedSlots = new List<object>();
+            var groupedByDate = slots.GroupBy(
+                slot => ((dynamic)slot).date,
+                (key, g) => new
+                {
+                    Date = key,
+                    Slots = g.ToList()
+                });
+
+            foreach (var group in groupedByDate)
+            {
+                DateTime minStartTime = DateTime.MaxValue;
+                DateTime maxEndTime = DateTime.MinValue;
+
+                foreach (var slot in group.Slots)
+                {
+                    try
+                    {
+                        var startTimeString = ((dynamic)slot).startTime as string;
+                        var endTimeString = ((dynamic)slot).endTime as string;
+
+                        if (!string.IsNullOrWhiteSpace(startTimeString) && !string.IsNullOrWhiteSpace(endTimeString))
+                        {
+                            var startTime = DateTime.ParseExact(startTimeString, "HH:mm", CultureInfo.InvariantCulture);
+                            var endTime = DateTime.ParseExact(endTimeString, "HH:mm", CultureInfo.InvariantCulture);
+
+                            if (startTime < minStartTime)
+                            {
+                                minStartTime = startTime;
+                            }
+                            if (endTime > maxEndTime)
+                            {
+                                maxEndTime = endTime;
+                            }
+                        }
+                    }
+                    catch (FormatException ex)
+                    {
+                        // Log the error or handle it as needed
+                        continue;
+                    }
+                }
+
+                if (minStartTime != DateTime.MaxValue && maxEndTime != DateTime.MinValue)
+                {
+                    aggregatedSlots.Add(new
+                    {
+                        title = "Working",
+                        date = group.Date,
+                        startTime = minStartTime.ToString("HH:mm"),
+                        endTime = maxEndTime.ToString("HH:mm")
+                    });
+                }
+            }
+
+            return aggregatedSlots;
+        }
+
+        private async Task<bool> IsHoliday(string dateString)
+        {
+            // Parse the date from the string
+            DateTime date;
+            try
+            {
+                date = DateTime.ParseExact(dateString, "yyyy/MM/dd", CultureInfo.InvariantCulture);
+            }
+            catch (FormatException)
+            {
+                throw new ArgumentException("Invalid date format. Please use 'yyyy/MM/dd'.");
+            }
+
+            // Check if the date is a holiday in any department
+            var isHoliday = await _dbContext.DepartmentHolidays
+                                           .AnyAsync(h => h.StartDate <= date && h.EndDate >= date && !h.IsDeleted);
+
+            return isHoliday;
+        }
+
     }
 }
