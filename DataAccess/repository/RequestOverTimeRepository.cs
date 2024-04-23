@@ -630,5 +630,63 @@ namespace DataAccess.Repository
             return new { message = "Overtime request rejected successfully." };
         }
 
+        public async Task<RequestOverTimeDTO> GetRequestOverTimeById(Guid requestId)
+        {
+            var request = await _dbContext.Requests
+                .Include(r => r.RequestOverTime)
+                    .ThenInclude(ro => ro.WorkingStatus)
+                .Include(r => r.EmployeeSendRequest)
+                .FirstOrDefaultAsync(r => r.Id == requestId && r.requestType == RequestType.OverTime && !r.IsDeleted);
+
+            if (request == null)
+            {
+                throw new Exception("Request not found or has been deleted.");
+            }
+
+            var requestOverTime = request.RequestOverTime;
+            var employee = request.EmployeeSendRequest;
+
+            // Assuming the request is approved; adjust logic if necessary
+            var timeInMonth = _dbContext.Requests
+                .Include(r => r.RequestOverTime)
+                .Where(r => r.EmployeeSendRequestId == employee.Id && r.Status == RequestStatus.Approved &&
+                            r.RequestOverTime.DateOfOverTime.Month == requestOverTime.DateOfOverTime.Month &&
+                            r.RequestOverTime.DateOfOverTime.Year == requestOverTime.DateOfOverTime.Year)
+                .Sum(r => r.RequestOverTime.NumberOfHour);
+
+            var timeInYear = _dbContext.Requests
+                .Include(r => r.RequestOverTime)
+                .Where(r => r.EmployeeSendRequestId == employee.Id && r.Status == RequestStatus.Approved &&
+                            r.RequestOverTime.DateOfOverTime.Year == requestOverTime.DateOfOverTime.Year)
+                .Sum(r => r.RequestOverTime.NumberOfHour);
+
+            var dto = new RequestOverTimeDTO
+            {
+                id = request.Id,
+                employeeId = employee.Id,
+                employeeName = $"{employee.FirstName} {employee.LastName}",
+                employeeNumber = employee.EmployeeNumber,
+                RequestOverTimeId = requestOverTime.Id,
+                workingStatusId = requestOverTime.WorkingStatusId,
+                timeInMonth = timeInMonth,
+                timeInYear = timeInYear,
+                workingStatus = requestOverTime.WorkingStatus.Name,
+                Date = requestOverTime.DateOfOverTime.ToString("yyyy/MM/dd"),
+                timeStart = requestOverTime.FromHour.ToString("HH:mm"),
+                timeEnd = requestOverTime.ToHour.ToString("HH:mm"),
+                NumberOfHour = requestOverTime.NumberOfHour,
+                submitDate = request.SubmitedDate.ToString("yyyy/MM/dd"),
+                IsDeleted = requestOverTime.IsDeleted,
+                status = request.Status.ToString(),
+                linkFile = request.PathAttachmentFile,
+                reason = request.Reason,
+                reasonReject = request.Message,
+                deciderId = request.EmployeeIdLastDecider
+            };
+
+            return dto;
+        }
+
+
     }
 }

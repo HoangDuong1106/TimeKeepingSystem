@@ -148,6 +148,19 @@ namespace TimeKeepingSystem.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        [HttpGet("get-request-overtime-by-request-id")]
+        public async Task<ActionResult<RequestOverTimeDTO>> GetRequestOverTimeById(Guid requestId)
+        {
+            try
+            {
+                return Ok(await _requestOverTimeRepository.GetRequestOverTimeById(requestId));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }
 

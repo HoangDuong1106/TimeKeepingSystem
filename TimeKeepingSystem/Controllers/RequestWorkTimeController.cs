@@ -129,6 +129,19 @@ namespace TimeKeepingSystem.Controllers
             }
         }
 
+        [HttpGet("get-request-work-time-by-request-id")]
+        public async Task<ActionResult<RequestWorkTimeDTO>> GetRequestWorkTimeById(Guid requestId)
+        {
+            try
+            {
+                return Ok(await _repository.GetRequestWorkTimeById(requestId));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
     }
 }
 

@@ -390,7 +390,8 @@ namespace DataAccess.Repository
                             deciderName = request.EmployeeIdLastDecider != null ? _dbContext.Employees.FirstOrDefault(e => e.Id == request.EmployeeIdLastDecider)?.FirstName : null,
                             statusName = request.Status.ToString(),
                             reason = request.Reason,
-                            linkFile = request.PathAttachmentFile
+                            linkFile = request.PathAttachmentFile,
+                            RequestId = request.Id,
                         });
                     }
                     else
@@ -811,6 +812,52 @@ namespace DataAccess.Repository
                 }
             }
         }
+
+        public async Task<RequestWorkTimeDTO> GetRequestWorkTimeById(Guid requestId)
+        {
+            var request = await _dbContext.Requests
+                .Include(r => r.RequestWorkTime)
+                    .ThenInclude(rwt => rwt.WorkslotEmployee)
+                        .ThenInclude(we => we.Workslot)
+                .Include(r => r.EmployeeSendRequest)
+                .FirstOrDefaultAsync(r => r.Id == requestId && r.requestType == RequestType.WorkTime && !r.IsDeleted);
+
+            if (request == null)
+            {
+                throw new Exception("Request not found or has been deleted.");
+            }
+
+            var requestWorkTime = request.RequestWorkTime;
+            var employee = request.EmployeeSendRequest;
+
+            var dto = new RequestWorkTimeDTO
+            {
+                Id = request.Id,
+                employeeId = employee.Id,
+                employeeName = $"{employee.FirstName} {employee.LastName}",
+                employeeNumber = employee.EmployeeNumber,
+                deciderId = request.EmployeeIdLastDecider,
+                RealHourStart = requestWorkTime?.RealHourStart,
+                RealHourEnd = requestWorkTime?.RealHourEnd,
+                NumberOfComeLateHour = requestWorkTime?.NumberOfComeLateHour ?? 0,
+                NumberOfLeaveEarlyHour = requestWorkTime?.NumberOfLeaveEarlyHour ?? 0,
+                WorkslotEmployeeId = requestWorkTime?.WorkslotEmployeeId ?? Guid.Empty,
+                SlotStart = requestWorkTime?.WorkslotEmployee?.Workslot?.FromHour,
+                SlotEnd = requestWorkTime?.WorkslotEmployee?.Workslot?.ToHour,
+                DateOfWorkTime = requestWorkTime?.DateOfSlot?.ToString("yyyy/MM/dd"),
+                linkFile = request.PathAttachmentFile,
+                Name = requestWorkTime?.Name,
+                submitDate = request.SubmitedDate.ToString("yyyy/MM/dd"),
+                status = (int)request.Status,
+                statusName = request.Status.ToString(),
+                reason = request.Reason,
+                reasonReject = request.Message,
+                IsDeleted = requestWorkTime?.IsDeleted ?? false
+            };
+
+            return dto;
+        }
+
 
     }
 }

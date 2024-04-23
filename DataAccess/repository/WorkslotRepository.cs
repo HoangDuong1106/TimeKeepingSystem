@@ -477,21 +477,23 @@ namespace DataAccess.Repository
             bool isWorkDay = (bool)typeof(DateStatusDTO).GetProperty(date.DayOfWeek.ToString())?.GetValue(workDays);
             bool isHoliday = await IsHoliday(_dbContext, date.ToString("yyyy/MM/dd"));
 
+            var departmentId = _dbContext.Employees.FirstOrDefault(e => e.Id == employeeId)?.DepartmentId;
+
             var workSlots = _dbContext.Workslots
-                .Where(ws => ws.DateOfSlot.Date == date && ws.Department.Employees.Any(e => e.Id == employeeId))
+                .Where(ws => ws.DateOfSlot.Date == date && ws.DepartmentId == departmentId)
                 .ToList();
 
             var leaveRequests = _dbContext.Requests
-                .Include(r => r.RequestLeave).ThenInclude(rl => rl.WorkslotEmployees).ThenInclude(we => we.Workslot)
+                .Include(r => r.RequestLeave).ThenInclude(rl => rl.WorkslotEmployees).ThenInclude(we => we.Workslot).Include(r => r.EmployeeSendRequest)
                 .Where(r => r.EmployeeSendRequestId == employeeId && r.Status == RequestStatus.Approved && r.RequestLeave.FromDate <= date && r.RequestLeave.ToDate >= date)
                 .ToList();
 
             var overtimeRequests = _dbContext.Requests
-                .Include(r => r.RequestOverTime)
+                .Include(r => r.RequestOverTime).Include(r => r.EmployeeSendRequest)
                 .Where(r => r.EmployeeSendRequestId == employeeId && r.Status == RequestStatus.Approved && r.RequestOverTime.DateOfOverTime == date)
                 .ToList();
 
-            // Handle work slots, leaves, and overtime
+            // Compile information for the department for each day
             if (!isHoliday)
             {
                 foreach (var slot in workSlots)
@@ -513,7 +515,6 @@ namespace DataAccess.Repository
                         date = date.ToString("yyyy-MM-dd"),
                         startTime = leave.RequestLeave.WorkslotEmployees.FirstOrDefault(we => we.Workslot.DateOfSlot.Date == date)?.Workslot?.FromHour,
                         endTime = leave.RequestLeave.WorkslotEmployees.FirstOrDefault(we => we.Workslot.DateOfSlot.Date == date)?.Workslot?.ToHour,
-                        description = leave.Reason
                     });
                 }
 
@@ -524,7 +525,8 @@ namespace DataAccess.Repository
                         title = "Overtime",
                         date = date.ToString("yyyy-MM-dd"),
                         startTime = ot.RequestOverTime.FromHour.ToString("HH:mm"),
-                        endTime = ot.RequestOverTime.ToHour.ToString("HH:mm")
+                        endTime = ot.RequestOverTime.ToHour.ToString("HH:mm"),
+                        employeeName = $"{ot.EmployeeSendRequest.FirstName} {ot.EmployeeSendRequest.LastName}"
                     });
                 }
             }
@@ -545,15 +547,16 @@ namespace DataAccess.Repository
         private List<object> AggregateWorkSlots(List<object> slots)
         {
             var aggregatedSlots = new List<object>();
-            var groupedByDate = slots.GroupBy(
-                slot => ((dynamic)slot).date,
+            var groupedByDateAndTitle = slots.GroupBy(
+                slot => new { Date = ((dynamic)slot).date, Title = ((dynamic)slot).title },
                 (key, g) => new
                 {
-                    Date = key,
+                    Date = key.Date,
+                    Title = key.Title,
                     Slots = g.ToList()
                 });
 
-            foreach (var group in groupedByDate)
+            foreach (var group in groupedByDateAndTitle)
             {
                 DateTime minStartTime = DateTime.MaxValue;
                 DateTime maxEndTime = DateTime.MinValue;
@@ -591,7 +594,7 @@ namespace DataAccess.Repository
                 {
                     aggregatedSlots.Add(new
                     {
-                        title = "Working",
+                        title = group.Title,
                         date = group.Date,
                         startTime = minStartTime.ToString("HH:mm"),
                         endTime = maxEndTime.ToString("HH:mm")
@@ -601,6 +604,7 @@ namespace DataAccess.Repository
 
             return aggregatedSlots;
         }
+
 
         private async Task<bool> IsHoliday(string dateString)
         {
