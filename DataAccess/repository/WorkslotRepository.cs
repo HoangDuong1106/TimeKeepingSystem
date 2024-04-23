@@ -158,7 +158,6 @@ namespace DataAccess.Repository
             }
         }
 
-
         public async Task<List<object>> GetWorkSlotsForDepartment(CreateWorkSlotRequest request)
         {
             List<object> response = new List<object>();
@@ -316,6 +315,29 @@ namespace DataAccess.Repository
             {
                 throw new Exception("Either departmentId or employeeId must be provided.");
             }
+        }
+
+        public async Task<List<object>> GetWorkSlotsForPersonal(CreateWorkSlotRequest request)
+        {
+            DateTime startDate = DateTime.ParseExact(request.month, "yyyy/MM/dd", CultureInfo.InvariantCulture);
+            DateTime endDate = startDate.AddMonths(1).AddDays(-1);
+
+            if (request.employeeId.HasValue)
+            {
+                var employee = await _dbContext.Employees
+                    .Include(e => e.UserAccount).ThenInclude(ua => ua.Role)
+                    .FirstOrDefaultAsync(e => e.Id == request.employeeId.Value);
+
+                if (employee == null)
+                    throw new Exception("Employee not found.");
+
+                var role = employee.UserAccount.Role.Name;
+
+                // Determine the response based on the role
+                return await GenerateEmployeeView(employee.Id, startDate, endDate);
+
+            }
+            throw new Exception("EmployeeId can not be null");
         }
 
         private async Task<List<object>> GenerateHRView(Guid departmentId, DateTime startDate, DateTime endDate)

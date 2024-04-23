@@ -169,6 +169,40 @@ namespace DataAccess.Repository
             };
         }
 
+        public async Task<object> DeleteOvertimeRequest(Guid requestId)
+        {
+            try
+            {
+                var request = await _dbContext.Requests
+                    .Include(r => r.RequestOverTime)
+                    .FirstOrDefaultAsync(r => r.Id == requestId && r.requestType == RequestType.OverTime);
+
+                if (request == null)
+                {
+                    throw new Exception("Overtime request not found.");
+                }
+
+                // Mark the RequestOverTime as deleted
+                if (request.RequestOverTime != null)
+                {
+                    request.RequestOverTime.IsDeleted = true;
+                }
+
+                // Mark the Request itself as deleted
+                request.IsDeleted = true;
+
+                // Save changes to the database
+                await _dbContext.SaveChangesAsync();
+
+                return new { message = "Overtime request deleted successfully." };
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error deleting overtime request: " + ex.Message);
+            }
+        }
+
+
         public async Task<object> EditRequestOvertimeOfEmployee(EditRequestOverTimeDTO dto, Guid employeeId)
         {
             // Step 1: Retrieve the record from the database using its ID

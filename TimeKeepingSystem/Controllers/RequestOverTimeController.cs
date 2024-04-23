@@ -135,6 +135,19 @@ namespace TimeKeepingSystem.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        [HttpDelete("delete-request-overtime-by-request-id")]
+        public async Task<ActionResult<object>> DeleteOvertimeRequest(Guid requestId)
+        {
+            try
+            {
+                return Ok(await _requestOverTimeRepository.DeleteOvertimeRequest(requestId));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }
 

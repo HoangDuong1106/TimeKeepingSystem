@@ -39,12 +39,25 @@ namespace TimeKeepingSystem.Controllers
             return await _repository.RemoveDuplicateWorkSlots();
         }
 
-        [HttpGet("get-workslot-of-department-in-one-month-for-manager")]
+        [HttpGet("get-workslot-of-department-in-one-month-for-team")]
         public async Task<ActionResult<List<object>>> GetWorkSlotsForDepartmentOrEmployee(Guid? departmentId, string month, Guid? employeeId)
         {
             try
             {
                 return Ok(await _repository.GetWorkSlotsForDepartmentOrEmployee(new CreateWorkSlotRequest() { departmentId = departmentId, month = month, employeeId= employeeId }));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet("get-workslot-of-department-in-one-month-for-personal")]
+        public async Task<ActionResult<List<object>>> GetWorkSlotsForPersonal(string month, Guid? employeeId)
+        {
+            try
+            {
+                return Ok(await _repository.GetWorkSlotsForPersonal(new CreateWorkSlotRequest() { month = month, employeeId = employeeId }));
             }
             catch (Exception ex)
             {
