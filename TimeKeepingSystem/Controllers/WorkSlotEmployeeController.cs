@@ -41,11 +41,11 @@ namespace TimeKeepingSystem.Controllers
         }
 
         [HttpGet("export-excel-file")]
-        public async Task<IActionResult> ExportWorkSlotEmployeeReport(Guid departmentId)
+        public async Task<IActionResult> ExportWorkSlotEmployeeReport(Guid departmentId, string month)
         {
             try
             {
-                string relativePath = await _workslotEmployeeRepository.ExportWorkSlotEmployeeReport(departmentId);
+                string relativePath = await _workslotEmployeeRepository.ExportWorkSlotEmployeeReport(departmentId, month);
                 string absolutePath = Path.Combine(Directory.GetCurrentDirectory(), relativePath.TrimStart('.').TrimStart('/'));
                 string fileName = Path.GetFileName(absolutePath);
 

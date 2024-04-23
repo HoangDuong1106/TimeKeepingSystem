@@ -547,40 +547,6 @@ namespace DataAccess.Repository
             public string Status { get; set; }
         }
 
-        public async Task<List<TimeSlotDto>> GetTimeSlotsByEmployeeId(Guid employeeId)
-        {
-            // Find the employee by Id
-            var employee = await _dbContext.Employees.FindAsync(employeeId);
-            if (employee == null)
-            {
-                return null; // Or throw an exception
-            }
-
-            // Fetch all WorkSlotEmployee for the employee
-            var workSlotEmployees = await _dbContext.WorkslotEmployees
-                .Include(we => we.Workslot)
-                .Include(we => we.AttendanceStatus)
-                .ThenInclude(ast => ast.LeaveType)
-                .Include(we => we.AttendanceStatus)
-                .ThenInclude(ast => ast.WorkingStatus)
-                .Where(we => we.EmployeeId == employeeId)
-                .ToListAsync();
-
-            // Group by DateOfSlot and prepare TimeSlot data
-            var groupedWorkSlotEmployees = workSlotEmployees
-                .GroupBy(we => we.Workslot.DateOfSlot)
-                .OrderBy(g => g.Key)
-                .Select(group => new TimeSlotDto
-                {
-                    Date = group.Key.ToString("yyyy-MM-dd"),
-                    Status = group.First().AttendanceStatus.LeaveTypeId.HasValue ?
-                             group.First().AttendanceStatus.LeaveType.Name :
-                             group.First().AttendanceStatus.WorkingStatus.Name
-                }).ToList();
-
-            return groupedWorkSlotEmployees;
-        }
-
         public static DateTime GetOneHourSoonerDateTime(string inputTimeStr)
         {
             DateTime inputTime = DateTime.ParseExact(inputTimeStr, "HH:mm", CultureInfo.InvariantCulture);
@@ -948,84 +914,82 @@ namespace DataAccess.Repository
             return targetTime.AddMinutes(randomMinutes);
         }
 
-        public async Task<string> ExportWorkSlotEmployeeReport(Guid departmentId)
+        public async Task<string> ExportWorkSlotEmployeeReport(Guid departmentId, string month)
         {
-            // Initialize EPPlus Excel package
             using (var package = new ExcelPackage())
             {
-                // Add a worksheet
                 var worksheet = package.Workbook.Worksheets.Add("WorkSlotEmployeeReport");
 
-                // Define the status short names
                 var statusShortNames = new Dictionary<string, string>
         {
-            { "Not Work Yet", "NWD" },
-            { "Worked", "WD" },
-                    {"Annual Leave", "AL" },
-                    {"Maternity Leave", "ML" },
-                    {"Sick Leave", "SL" },
-                    {"Paternity Leave", "PL" },
-                    {"Unpaid Leave", "UL" },
-                    {"Study Leave", "STL" },
-                    {"WFH", "WFH" },
-                    {"Absent", "AS" },
-                    {"Training", "TN" },
-                    {"Working", "WK" },
-                    {"Remote Working", "RW" },
-                    {"Lack of Time", "LOT" }
-
+            {"Not Work Yet", "NWY"},
+            {"No Check Out", "NCO"},
+            {"Annual Leave", "AL"},
+            {"Maternity Leave", "ML"},
+            {"Sick Leave", "SL"},
+            {"Paternity Leave", "PL"},
+            {"Unpaid Leave", "UL"},
+            {"Study Leave", "STL"},
+            {"Lack of Time", "LOT"},
+            {"Worked", "WD"},
+            {"Absent", "AS"},
+            {"Public Holiday", "PH"},
+            {"Non-Work Date", "NWD"},
         };
 
+                var statusColors = new Dictionary<string, Color>
+        {
+            {"NWY", Color.LightGray},
+            {"NCO", Color.Yellow},
+            {"AL", Color.Blue},
+            {"ML", Color.Pink},
+            {"SL", Color.Green},
+            {"PL", Color.Orange},
+            {"UL", Color.Purple},
+            {"STL", Color.Cyan},
+            {"LOT", Color.Red},
+            {"WD", Color.LightGreen},
+            {"AS", Color.DarkRed},
+            {"PH", Color.Gold},
+            {"NWD", Color.DarkGray},
+        };
 
-                // Add the status key to the first and second rows
-                worksheet.Cells[1, 1].Value = "Not-Working Date / NWD";
-                worksheet.Cells[2, 1].Value = "Working Date / WD";
-                worksheet.Cells[3, 1].Value = "Annual Leave / AL";
-                worksheet.Cells[4, 1].Value = "Maternity Leave / ML";
-                worksheet.Cells[5, 1].Value = "Sick Leave / SL";
-                worksheet.Cells[6, 1].Value = "Paternity Leave / PL";
-                worksheet.Cells[7, 1].Value = "Unpaid Leave / UL";
-                worksheet.Cells[8, 1].Value = "Study Leave / STL";
-                worksheet.Cells[9, 1].Value = "Lack of Time / LOT";
-                worksheet.Cells[10, 1].Value = "Absent / AS";
-                worksheet.Cells[11, 1].Value = "Training / TN";
-                worksheet.Cells[12, 1].Value = "Working / WK";
-                worksheet.Cells[13, 1].Value = "Remote Working / RW";
+                // Set headers and their corresponding colors
+                int rowIndex = 1;
+                foreach (var status in statusShortNames)
+                {
+                    string cellAddress = $"A{rowIndex}";
+                    worksheet.Cells[cellAddress].Value = $"{status.Key} / {status.Value}";
+                    worksheet.Cells[cellAddress].Style.Fill.PatternType = ExcelFillStyle.Solid;
+                    worksheet.Cells[cellAddress].Style.Fill.BackgroundColor.SetColor(statusColors[status.Value]);
+                    worksheet.Cells[cellAddress].AutoFitColumns(25);
+                    rowIndex++;
+                }
 
-
-                // Fetch all employees in the department
                 var employees = await _dbContext.Employees.Where(e => e.DepartmentId == departmentId).ToListAsync();
-
-                // Initialize list to store the TimeSlot data for all employees
                 var allTimeSlots = new List<dynamic>();
 
                 foreach (var employee in employees)
                 {
-                    // Fetch the TimeSlot data using your existing method
-                    var workSlotData = await GetTimeSlotsByEmployeeId(employee.Id);
-                    var timeSlots = workSlotData;
-
-                    // Add this employee's TimeSlot data to the list
-                    foreach (var timeSlot in timeSlots)
+                    var workSlotData = await GetTimeSlotsByEmployeeId(employee.Id, month);
+                    foreach (var timeSlot in workSlotData)
                     {
                         allTimeSlots.Add(new { EmployeeName = employee.FirstName + " " + employee.LastName, Date = timeSlot.Date, Status = timeSlot.Status });
                     }
                 }
 
-                // Headers for the Excel file
-                worksheet.Cells[15, 1].Value = "Employee Name";
-                worksheet.Cells[15, 1].AutoFitColumns();  // Auto-resize
+                worksheet.Cells["A15"].Value = "Employee Name";
+                worksheet.Cells["A15"].AutoFitColumns();
 
                 var distinctDates = allTimeSlots.Select(d => d.Date).Distinct().OrderBy(d => d).ToList();
                 for (int i = 0; i < distinctDates.Count; i++)
                 {
-                    worksheet.Cells[15, i + 2].Value = distinctDates[i];
-                    worksheet.Cells[15, i + 2].AutoFitColumns();  // Auto-resize for date columns
+                    worksheet.Cells[15, i + 2].Value = distinctDates[i] + "    ";
+                    worksheet.Cells[15, i + 2].AutoFitColumns(50);
                 }
 
-                // Set Border Style for the entire range of data
-                var endColumn = distinctDates.Count + 1;
-                var endRow = employees.Count() + 15;
+                int endColumn = distinctDates.Count + 1;
+                int endRow = employees.Count() + 15;
                 using (var range = worksheet.Cells[15, 1, endRow, endColumn])
                 {
                     range.Style.Border.Top.Style = ExcelBorderStyle.Thin;
@@ -1034,52 +998,32 @@ namespace DataAccess.Repository
                     range.Style.Border.Right.Style = ExcelBorderStyle.Thin;
                 }
 
-                // Populate the data
-                var groupedData = allTimeSlots.GroupBy(d => d.EmployeeName).ToList();
-                var statusColors = new Dictionary<string, Color>
-{
-    { "NWD", Color.Orange },
-    { "WD", Color.Green },
-    { "AL", Color.Blue },
-    { "ML", Color.Purple },
-    { "SL", Color.Red },
-    { "PL", Color.Pink },
-    { "UL", Color.Brown },
-    { "STL", Color.Magenta },
-    { "WFH", Color.Gray },
-    { "AS", Color.Black },
-    { "TN", Color.Yellow },
-    { "WK", Color.Cyan },
-    { "RW", Color.DarkGreen }
-}; int row = 16;
-                foreach (var group in groupedData)
+                int row = 16;
+                foreach (var group in allTimeSlots.GroupBy(d => d.EmployeeName))
                 {
-                    worksheet.Cells[row, 1].Value = group.Key; // Employee Name
-                    worksheet.Cells[row, 1].AutoFitColumns();  // Auto-resize
+                    worksheet.Cells[row, 1].Value = group.Key;
+                    worksheet.Cells[row, 1].AutoFitColumns();
 
                     foreach (var record in group)
                     {
                         int col = distinctDates.IndexOf(record.Date) + 2;
                         worksheet.Cells[row, col].Value = statusShortNames[record.Status];
 
-                        // Set background color
+                        // Apply background color based on status
                         if (statusColors.ContainsKey(statusShortNames[record.Status]))
                         {
                             worksheet.Cells[row, col].Style.Fill.PatternType = ExcelFillStyle.Solid;
                             worksheet.Cells[row, col].Style.Fill.BackgroundColor.SetColor(statusColors[statusShortNames[record.Status]]);
                         }
 
-                        // Auto-resize the column
                         worksheet.Cells[row, col].AutoFitColumns();
                     }
                     row++;
                 }
 
-                // Save the Excel package to a MemoryStream
                 var stream = new MemoryStream();
                 package.SaveAs(stream);
 
-                // Save the stream to your desired location
                 var filePath = "./WorkSlotEmployeeReport.xlsx";
                 await File.WriteAllBytesAsync(filePath, stream.ToArray());
 
@@ -1087,6 +1031,60 @@ namespace DataAccess.Repository
             }
         }
 
+
+        public async Task<List<TimeSlotDto>> GetTimeSlotsByEmployeeId(Guid employeeId, string month)
+        {
+            var employee = await _dbContext.Employees.FindAsync(employeeId);
+            if (employee == null)
+            {
+                throw new Exception("Employee not found.");
+            }
+
+            DateTime monthStart = DateTime.ParseExact(month, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+            DateTime monthEnd = new DateTime(monthStart.Year, monthStart.Month, DateTime.DaysInMonth(monthStart.Year, monthStart.Month));
+
+            var workSlotEmployees = await _dbContext.WorkslotEmployees
+                .Include(we => we.Workslot)
+                .Include(we => we.AttendanceStatus)
+                    .ThenInclude(ast => ast.LeaveType)
+                .Include(we => we.AttendanceStatus)
+                    .ThenInclude(ast => ast.WorkingStatus)
+                .Where(we => we.EmployeeId == employeeId &&
+                             we.Workslot.DateOfSlot >= monthStart &&
+                             we.Workslot.DateOfSlot <= monthEnd)
+                .ToListAsync();
+
+            var daysInMonth = Enumerable.Range(1, DateTime.DaysInMonth(monthStart.Year, monthStart.Month))
+                                        .Select(day => new DateTime(monthStart.Year, monthStart.Month, day))
+                                        .ToList();
+
+            var results = new List<TimeSlotDto>();
+
+            foreach (var date in daysInMonth)
+            {
+                bool isHoliday = await IsHoliday(date.ToString("yyyy/MM/dd"));
+                var workSlotsForDate = workSlotEmployees.Where(we => we.Workslot.DateOfSlot == date).ToList();
+
+                if (isHoliday)
+                {
+                    results.Add(new TimeSlotDto { Date = date.ToString("yyyy-MM-dd"), Status = "Public Holiday" });
+                }
+                else if (!workSlotsForDate.Any())
+                {
+                    results.Add(new TimeSlotDto { Date = date.ToString("yyyy-MM-dd"), Status = "Non-Work Date" });
+                }
+                else
+                {
+                    var slot = workSlotsForDate.First(); // Assuming getting the first slot for simplification
+                    string status = slot.AttendanceStatus.WorkingStatus.Name == "Working" ? "No Check Out" :
+                                    slot.AttendanceStatus.LeaveTypeId.HasValue ? slot.AttendanceStatus.LeaveType.Name :
+                                    slot.AttendanceStatus.WorkingStatus.Name;
+                    results.Add(new TimeSlotDto { Date = date.ToString("yyyy-MM-dd"), Status = status });
+                }
+            }
+
+            return results;
+        }
         public async Task<object> GetWorkSlotEmployeeByEmployeeIdForToday(Guid employeeId)
         {
             var today = DateTime.Now.Date;

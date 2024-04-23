@@ -320,7 +320,7 @@ namespace DataAccess.Repository
         public async Task<List<object>> GetWorkSlotsForPersonal(CreateWorkSlotRequest request)
         {
             DateTime startDate = DateTime.ParseExact(request.month, "yyyy/MM/dd", CultureInfo.InvariantCulture);
-            DateTime endDate = startDate.AddMonths(1).AddDays(-1);
+            DateTime endDate = new DateTime(startDate.Year, startDate.Month, DateTime.DaysInMonth(startDate.Year, startDate.Month));
 
             if (request.employeeId.HasValue)
             {
@@ -331,14 +331,12 @@ namespace DataAccess.Repository
                 if (employee == null)
                     throw new Exception("Employee not found.");
 
-                var role = employee.UserAccount.Role.Name;
-
                 // Determine the response based on the role
                 return await GenerateEmployeeView(employee.Id, startDate, endDate);
-
             }
-            throw new Exception("EmployeeId can not be null");
+            throw new Exception("EmployeeId cannot be null.");
         }
+
 
         private async Task<List<object>> GenerateHRView(Guid departmentId, DateTime startDate, DateTime endDate)
         {
@@ -385,6 +383,7 @@ namespace DataAccess.Repository
 
             return AggregateWorkSlots(response);
         }
+
 
         private async Task<DateStatusDTO> GetWorkDays(Guid departmentId)
         {
@@ -493,17 +492,30 @@ namespace DataAccess.Repository
                 .Where(r => r.EmployeeSendRequestId == employeeId && r.Status == RequestStatus.Approved && r.RequestOverTime.DateOfOverTime == date)
                 .ToList();
 
-            // Compile information for the department for each day
             if (!isHoliday)
             {
-                foreach (var slot in workSlots)
+                if (workSlots.Any())
                 {
+                    foreach (var slot in workSlots)
+                    {
+                        slots.Add(new
+                        {
+                            title = "Working",
+                            date = date.ToString("yyyy-MM-dd"),
+                            startTime = slot.FromHour,
+                            endTime = slot.ToHour
+                        });
+                    }
+                }
+                else
+                {
+                    // Non-working day with possible overtime
                     slots.Add(new
                     {
-                        title = "Working",
+                        title = "Non-working",
                         date = date.ToString("yyyy-MM-dd"),
-                        startTime = slot.FromHour,
-                        endTime = slot.ToHour
+                        startTime = "00:00",
+                        endTime = "00:00"
                     });
                 }
 

@@ -30,6 +30,5 @@ namespace DataAccess.Service
 
         public async Task<object> CheckInWorkslotEmployee(Guid employeeId, DateTime? currentTime) => await _workslotEmployeeRepository.CheckInWorkslotEmployee(employeeId, currentTime);
 
-        public async Task<string> ExportWorkSlotEmployeeReport(Guid departmentId) => await _workslotEmployeeRepository.ExportWorkSlotEmployeeReport(departmentId);
     }
 }
