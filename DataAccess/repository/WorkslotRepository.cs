@@ -577,6 +577,7 @@ namespace DataAccess.Repository
             {
                 DateTime minStartTime = DateTime.MaxValue;
                 DateTime maxEndTime = DateTime.MinValue;
+                HashSet<string> periods = new HashSet<string>();
 
                 foreach (var slot in group.Slots)
                 {
@@ -584,6 +585,7 @@ namespace DataAccess.Repository
                     {
                         var startTimeString = ((dynamic)slot).startTime as string;
                         var endTimeString = ((dynamic)slot).endTime as string;
+                        var period = ((dynamic)slot).period as string;
 
                         if (!string.IsNullOrWhiteSpace(startTimeString) && !string.IsNullOrWhiteSpace(endTimeString))
                         {
@@ -599,6 +601,10 @@ namespace DataAccess.Repository
                                 maxEndTime = endTime;
                             }
                         }
+                        if (!string.IsNullOrWhiteSpace(period))
+                        {
+                            periods.Add(period);
+                        }
                     }
                     catch (FormatException ex)
                     {
@@ -607,6 +613,8 @@ namespace DataAccess.Repository
                     }
                 }
 
+                string aggregatedPeriod = periods.Count > 1 ? "Fullday" : periods.FirstOrDefault() ?? "";
+
                 if (minStartTime != DateTime.MaxValue && maxEndTime != DateTime.MinValue)
                 {
                     aggregatedSlots.Add(new
@@ -614,7 +622,8 @@ namespace DataAccess.Repository
                         title = group.Title,
                         date = group.Date,
                         startTime = minStartTime.ToString("HH:mm"),
-                        endTime = maxEndTime.ToString("HH:mm")
+                        endTime = maxEndTime.ToString("HH:mm"),
+                        period = aggregatedPeriod
                     });
                 }
             }
@@ -656,10 +665,8 @@ namespace DataAccess.Repository
 
             foreach (var group in groupedByDate)
             {
-                // Filter out slots with empty period strings before grouping by period
-                var validSlots = group.Slots.Where(slot => !string.IsNullOrWhiteSpace(((dynamic)slot).period));
-
-                var slotsByPeriod = validSlots.GroupBy(
+                // Group slots by period, including those with empty period strings
+                var slotsByPeriod = group.Slots.GroupBy(
                     slot => ((dynamic)slot).period,
                     (period, periodSlots) => new
                     {
@@ -669,14 +676,23 @@ namespace DataAccess.Repository
 
                 foreach (var periodGroup in slotsByPeriod)
                 {
-                    if (periodGroup.Slots.Count(slot => ((dynamic)slot).title == "Leave") > 0)
+                    if (!string.IsNullOrWhiteSpace(periodGroup.Period))
                     {
-                        // If there's a leave slot for this period, filter out any working slots.
-                        filteredSlots.AddRange(periodGroup.Slots.Where(slot => ((dynamic)slot).title != "Working"));
+                        // Apply filtering only to slots with non-empty periods
+                        if (periodGroup.Slots.Count(slot => ((dynamic)slot).title == "Leave") > 0)
+                        {
+                            // If there's a leave slot for this period, filter out any working slots.
+                            filteredSlots.AddRange(periodGroup.Slots.Where(slot => ((dynamic)slot).title != "Working"));
+                        }
+                        else
+                        {
+                            // If there's no leave, add all slots as usual.
+                            filteredSlots.AddRange(periodGroup.Slots);
+                        }
                     }
                     else
                     {
-                        // If there's no leave, add all slots as usual.
+                        // If the period string is empty, add all such slots without filtering.
                         filteredSlots.AddRange(periodGroup.Slots);
                     }
                 }
