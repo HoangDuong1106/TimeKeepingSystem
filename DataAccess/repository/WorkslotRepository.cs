@@ -378,12 +378,12 @@ namespace DataAccess.Repository
             for (DateTime date = startDate; date <= endDate; date = date.AddDays(1))
             {
                 var slots = await GeneratePersonalSlots(employeeId, date, workDays);
-                response.AddRange(slots);
+                var filteredSlots = await FilterSlotsBeforeAggregation(slots);
+                response.AddRange(filteredSlots);
             }
 
             return AggregateWorkSlots(response);
         }
-
 
         private async Task<DateStatusDTO> GetWorkDays(Guid departmentId)
         {
@@ -641,6 +641,48 @@ namespace DataAccess.Repository
                                            .AnyAsync(h => h.StartDate <= date && h.EndDate >= date && !h.IsDeleted);
 
             return isHoliday;
+        }
+
+        private async Task<List<object>> FilterSlotsBeforeAggregation(List<object> slots)
+        {
+            var filteredSlots = new List<object>();
+            var groupedByDate = slots.GroupBy(
+                slot => ((dynamic)slot).date,
+                (date, g) => new
+                {
+                    Date = date,
+                    Slots = g.ToList()
+                });
+
+            foreach (var group in groupedByDate)
+            {
+                // Filter out slots with empty period strings before grouping by period
+                var validSlots = group.Slots.Where(slot => !string.IsNullOrWhiteSpace(((dynamic)slot).period));
+
+                var slotsByPeriod = validSlots.GroupBy(
+                    slot => ((dynamic)slot).period,
+                    (period, periodSlots) => new
+                    {
+                        Period = period,
+                        Slots = periodSlots.ToList()
+                    });
+
+                foreach (var periodGroup in slotsByPeriod)
+                {
+                    if (periodGroup.Slots.Count(slot => ((dynamic)slot).title == "Leave") > 0)
+                    {
+                        // If there's a leave slot for this period, filter out any working slots.
+                        filteredSlots.AddRange(periodGroup.Slots.Where(slot => ((dynamic)slot).title != "Working"));
+                    }
+                    else
+                    {
+                        // If there's no leave, add all slots as usual.
+                        filteredSlots.AddRange(periodGroup.Slots);
+                    }
+                }
+            }
+
+            return filteredSlots;
         }
 
     }
