@@ -503,7 +503,8 @@ namespace DataAccess.Repository
                             title = "Working",
                             date = date.ToString("yyyy-MM-dd"),
                             startTime = slot.FromHour,
-                            endTime = slot.ToHour
+                            endTime = slot.ToHour,
+                            period = slot.IsMorning ? "Morning" : "Afternoon"
                         });
                     }
                 }
@@ -515,7 +516,8 @@ namespace DataAccess.Repository
                         title = "Non-working",
                         date = date.ToString("yyyy-MM-dd"),
                         startTime = "00:00",
-                        endTime = "00:00"
+                        endTime = "00:00",
+                        period = ""
                     });
                 }
 
@@ -527,6 +529,7 @@ namespace DataAccess.Repository
                         date = date.ToString("yyyy-MM-dd"),
                         startTime = leave.RequestLeave.WorkslotEmployees.FirstOrDefault(we => we.Workslot.DateOfSlot.Date == date)?.Workslot?.FromHour,
                         endTime = leave.RequestLeave.WorkslotEmployees.FirstOrDefault(we => we.Workslot.DateOfSlot.Date == date)?.Workslot?.ToHour,
+                        period = (bool)(leave.RequestLeave.WorkslotEmployees.FirstOrDefault(we => we.Workslot.DateOfSlot.Date == date)?.Workslot?.IsMorning) ? "Morning" : "Afternoon"
                     });
                 }
 
@@ -538,7 +541,8 @@ namespace DataAccess.Repository
                         date = date.ToString("yyyy-MM-dd"),
                         startTime = ot.RequestOverTime.FromHour.ToString("HH:mm"),
                         endTime = ot.RequestOverTime.ToHour.ToString("HH:mm"),
-                        employeeName = $"{ot.EmployeeSendRequest.FirstName} {ot.EmployeeSendRequest.LastName}"
+                        employeeName = $"{ot.EmployeeSendRequest.FirstName} {ot.EmployeeSendRequest.LastName}",
+                        period = ""
                     });
                 }
             }
@@ -549,7 +553,8 @@ namespace DataAccess.Repository
                     title = "Public Holiday",
                     date = date.ToString("yyyy-MM-dd"),
                     startTime = "00:00",
-                    endTime = "00:00"
+                    endTime = "00:00",
+                    period = ""
                 });
             }
 
