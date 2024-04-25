@@ -35,7 +35,7 @@ namespace DataAccess.DAO
                 {
                     var members = await context.UserAccounts
                         .Include(u => u.Role)
-                              .Include(u => u.Employee)
+                              .Include(u => u.Employee).ThenInclude(u => u.Department)
                         .ToListAsync();
 
                     return members;

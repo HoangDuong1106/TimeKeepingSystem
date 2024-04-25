@@ -124,10 +124,10 @@ namespace TimeKeepingSystem.Controllers
                 if (customer != null)
                 {
 
-                    if (customer.IsDeleted == false)
+                    if (customer.IsDeleted == false && (customer.Employee.Department != null || customer.Role.Name == "Admin"))
                     {
 
-                        return Ok(new { StatusCode = 200, Message = "Login succedfully", data = GenerateToken(customer), avatar = customer.Employee.LastName, employeeName = customer.Employee.FirstName + " " + customer.Employee.LastName, role = customer.Role.Name, employeeId = customer.EmployeeId });
+                        return Ok(new { StatusCode = 200, Message = "Login succedfully", data = GenerateToken(customer), avatar = customer.Employee.LastName, employeeName = customer.Employee.FirstName + " " + customer.Employee.LastName, role = customer.Role.Name, employeeId = customer.EmployeeId, teamId = customer.Employee.DepartmentId, teamName = customer.Employee.Department.Name });
                     }
                     else
                     {
@@ -163,6 +163,8 @@ namespace TimeKeepingSystem.Controllers
                 Subject = new ClaimsIdentity(new[]{
                     new Claim(ClaimTypes.Name, acc.Username),
                     new Claim("employeeId", acc.EmployeeId.ToString()),
+                    new Claim("teamId", acc.Employee?.DepartmentId.ToString()),
+                    new Claim("teamName", acc.Employee?.Department?.Name.ToString()),
 
                     new Claim("Id", acc.ID.ToString()),
                     new Claim("RoleName", acc.Role.Name),
