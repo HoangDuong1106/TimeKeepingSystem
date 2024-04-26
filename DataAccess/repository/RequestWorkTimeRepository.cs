@@ -358,7 +358,7 @@ namespace DataAccess.Repository
                 .Include(w => w.Workslot)
                 .Include(w => w.AttendanceStatus)
                 .ThenInclude(a => a.WorkingStatus)
-                .Where(w => w.IsDeleted == false && w.EmployeeId == employeeId && w.AttendanceStatus.WorkingStatus.Name == "Lack of Time")
+                .Where(w => w.IsDeleted == false && w.EmployeeId == employeeId)
                 .ToList();
 
             var result = new List<WorkslotEmployeeDTO>();
@@ -375,47 +375,84 @@ namespace DataAccess.Repository
                     var requestWorkTime = _dbContext.RequestWorkTimes.FirstOrDefault(rw => rw.WorkslotEmployeeId == afternoonSlot.Id);
                     if (requestWorkTime != null)
                     {
-                        var request = _dbContext.Requests.FirstOrDefault(r => r.RequestWorkTimeId == requestWorkTime.Id);
-                        result.Add(new WorkslotEmployeeDTO
-                        {
-                            workslotEmployeeId = afternoonSlot.Id,
-                            Date = afternoonSlot.Workslot.DateOfSlot,
-                            SlotStart = morningSlot.Workslot.FromHour,
-                            SlotEnd = afternoonSlot.Workslot.ToHour,
-                            CheckInTime = morningSlot.CheckInTime,
-                            CheckOutTime = afternoonSlot.CheckOutTime,
-                            TimeLeaveEarly = CalculateTimeDifference(afternoonSlot.Workslot.ToHour, afternoonSlot.CheckOutTime, true),
-                            TimeComeLate = CalculateTimeDifference(morningSlot.CheckInTime, morningSlot.Workslot.FromHour, false),
-                            deciderId = request.EmployeeIdLastDecider,
-                            deciderName = request.EmployeeIdLastDecider != null ? _dbContext.Employees.FirstOrDefault(e => e.Id == request.EmployeeIdLastDecider)?.FirstName : null,
-                            statusName = request.Status.ToString(),
-                            reason = request.Reason,
-                            linkFile = request.PathAttachmentFile,
-                            RequestId = request.Id,
-                        });
+                        continue;
+                        //var request = _dbContext.Requests.FirstOrDefault(r => r.RequestWorkTimeId == requestWorkTime.Id);
+                        //result.Add(new WorkslotEmployeeDTO
+                        //{
+                        //    workslotEmployeeId = afternoonSlot.Id,
+                        //    Date = afternoonSlot.Workslot.DateOfSlot,
+                        //    SlotStart = morningSlot.Workslot.FromHour,
+                        //    SlotEnd = afternoonSlot.Workslot.ToHour,
+                        //    CheckInTime = morningSlot.CheckInTime,
+                        //    CheckOutTime = afternoonSlot.CheckOutTime,
+                        //    TimeLeaveEarly = CalculateTimeDifference(afternoonSlot.Workslot.ToHour, afternoonSlot.CheckOutTime, true),
+                        //    TimeComeLate = CalculateTimeDifference(morningSlot.CheckInTime, morningSlot.Workslot.FromHour, false),
+                        //    deciderId = request.EmployeeIdLastDecider,
+                        //    deciderName = request.EmployeeIdLastDecider != null ? _dbContext.Employees.FirstOrDefault(e => e.Id == request.EmployeeIdLastDecider)?.FirstName : null,
+                        //    statusName = request.Status.ToString(),
+                        //    reason = request.Reason,
+                        //    linkFile = request.PathAttachmentFile,
+                        //    RequestId = request.Id,
+                        //});
                     }
                     else
                     {
-                        //if (afternoonSlot.Employee.DepartmentId == null) continue;
-                        var deciderId = _dbContext.Departments.FirstOrDefault(d => d.Id == afternoonSlot.Employee.DepartmentId)?.ManagerId;
-                        var decider = deciderId != null ? _dbContext.Employees.FirstOrDefault(e => e.Id == deciderId) : null;
-                        var deciderName = deciderId != null ? decider?.FirstName + " " + decider?.LastName : null;
-                        result.Add(new WorkslotEmployeeDTO
+                        if (morningSlot.CheckInTime == null) continue;
+                            //if (afternoonSlot.Employee.DepartmentId == null) continue;
+                            var checkIn = DateTime.ParseExact(morningSlot.CheckInTime, "HH:mm", CultureInfo.InvariantCulture);
+                        if (afternoonSlot.CheckOutTime == null)
                         {
-                            workslotEmployeeId = afternoonSlot.Id,
-                            Date = afternoonSlot.Workslot.DateOfSlot,
-                            SlotStart = morningSlot.Workslot.FromHour,
-                            SlotEnd = afternoonSlot.Workslot.ToHour,
-                            CheckInTime = morningSlot.CheckInTime,
-                            CheckOutTime = afternoonSlot.CheckOutTime,
-                            TimeLeaveEarly = CalculateTimeDifference(afternoonSlot.Workslot.ToHour, afternoonSlot.CheckOutTime, true),
-                            TimeComeLate = CalculateTimeDifference(morningSlot.CheckInTime, morningSlot.Workslot.FromHour, false),
-                            deciderId = deciderId,
-                            deciderName = deciderName,
-                            statusName = "Lack Of Work Time",
-                            reason = null,
-                            linkFile = null
-                        });
+                            result.Add(new WorkslotEmployeeDTO
+                            {
+                                workslotEmployeeId = afternoonSlot.Id,
+                                Date = afternoonSlot.Workslot.DateOfSlot,
+                                SlotStart = morningSlot.Workslot.FromHour,
+                                SlotEnd = afternoonSlot.Workslot.ToHour,
+                                CheckInTime = morningSlot.CheckInTime,
+                                CheckOutTime = afternoonSlot.CheckOutTime,
+                                TimeLeaveEarly = CalculateTimeDifference(afternoonSlot.Workslot.ToHour, afternoonSlot.CheckOutTime, true),
+                                TimeComeLate = "00:00",
+                                deciderId = _dbContext.Departments.FirstOrDefault(d => d.Id == afternoonSlot.Employee.DepartmentId)?.ManagerId,
+                                deciderName = null,
+                                statusName = "Not Check Out Yet",
+                                reason = null,
+                                linkFile = null
+                            });
+                            continue;
+                        }
+                            var checkOut = DateTime.ParseExact(afternoonSlot.CheckOutTime, "HH:mm", CultureInfo.InvariantCulture);
+                            var totalWorkDuration = (checkOut - checkIn).TotalHours;
+
+                            // Calculate TimeLeaveEarly and TimeComeLate
+                            var timeLeaveEarly = CalculateTimeDifference(afternoonSlot.Workslot.ToHour, afternoonSlot.CheckOutTime, false);
+                            var timeComeLate = CalculateTimeDifference(morningSlot.Workslot.FromHour, morningSlot.CheckInTime, true);
+
+                            // Check the total work duration and ensure that time differences are not "00:00"
+                            if (totalWorkDuration < 9 && (timeLeaveEarly != "00:00" || timeComeLate != "00:00"))
+                            {
+                                var deciderId = _dbContext.Departments.FirstOrDefault(d => d.Id == afternoonSlot.Employee.DepartmentId)?.ManagerId;
+                                var decider = deciderId != null ? _dbContext.Employees.FirstOrDefault(e => e.Id == deciderId) : null;
+                                var deciderName = decider != null ? decider.FirstName + " " + decider.LastName : null;
+
+                                result.Add(new WorkslotEmployeeDTO
+                                {
+                                    workslotEmployeeId = afternoonSlot.Id,
+                                    Date = afternoonSlot.Workslot.DateOfSlot,
+                                    SlotStart = morningSlot.Workslot.FromHour,
+                                    SlotEnd = afternoonSlot.Workslot.ToHour,
+                                    CheckInTime = morningSlot.CheckInTime,
+                                    CheckOutTime = afternoonSlot.CheckOutTime,
+                                    TimeLeaveEarly = timeLeaveEarly,
+                                    TimeComeLate = timeComeLate,
+                                    deciderId = deciderId,
+                                    deciderName = deciderName,
+                                    statusName = "Lack Of Work Time",
+                                    reason = null,
+                                    linkFile = null
+                                });
+                            }
+                        
+
                     }
                 }
             }
