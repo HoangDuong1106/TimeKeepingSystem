@@ -64,7 +64,7 @@ namespace DataAccess.Repository
                     reason = r.Reason,
                     reasonReject = r.Message,
                     linkFile = r.PathAttachmentFile,
-                    WorkslotEmployeeId = r.RequestWorkTime.WorkslotEmployeeId
+                    WorkslotEmployeeId = r.RequestWorkTime.WorkslotEmployeeId,
                 });
             });
 
@@ -92,6 +92,8 @@ namespace DataAccess.Repository
                 WorkslotEmployeeId = dto.WorkslotEmployeeId,
                 WorkslotEmployee = workslotEmployee,
                 WorkslotEmployeeMorningId = dto.workslotEmployeeMorningId,
+                attendanceStatusMorningId = dto.attendanceStatusMorningId,
+                attendanceStatusAfternoonId = dto.attendanceStatusAfternoonId,
                 IsDeleted = false  // Set the soft delete flag to false
             };
 
@@ -381,8 +383,7 @@ namespace DataAccess.Repository
                 {
                     var rejectAndCancelRequestWorkTime = _dbContext.Requests
                         .Where(r => r.RequestWorkTime != null)
-                        .Where(r => r.Status == RequestStatus.Rejected)
-                        .Where(r => r.Status == RequestStatus.Cancel)
+                        .Where(r => r.Status == RequestStatus.Rejected || r.Status == RequestStatus.Cancel)
                         .Select(r => r.RequestWorkTimeId);
                     var requestWorkTime = _dbContext.RequestWorkTimes
                         .Where(r => !rejectAndCancelRequestWorkTime.Contains(r.Id))
@@ -420,6 +421,8 @@ namespace DataAccess.Repository
                             {
                                 workslotEmployeeId = afternoonSlot.Id,
                                 workslotEmployeeMorningId = morningSlot.Id,
+                                attendanceStatusMorningId = morningSlot.AttendanceStatusId,
+                                attendanceStatusAfternoonId = afternoonSlot.AttendanceStatusId,
                                 Date = afternoonSlot.Workslot.DateOfSlot,
                                 SlotStart = morningSlot.Workslot.FromHour,
                                 SlotEnd = afternoonSlot.Workslot.ToHour,
@@ -452,6 +455,9 @@ namespace DataAccess.Repository
                                 result.Add(new WorkslotEmployeeDTO
                                 {
                                     workslotEmployeeId = afternoonSlot.Id,
+                                    workslotEmployeeMorningId = morningSlot.Id,
+                                    attendanceStatusMorningId = morningSlot.AttendanceStatusId,
+                                    attendanceStatusAfternoonId = afternoonSlot.AttendanceStatusId,
                                     Date = afternoonSlot.Workslot.DateOfSlot,
                                     SlotStart = morningSlot.Workslot.FromHour,
                                     SlotEnd = afternoonSlot.Workslot.ToHour,
@@ -476,11 +482,11 @@ namespace DataAccess.Repository
             IEnumerable<WorkslotEmployeeDTO> filteredResults = result.AsEnumerable();
             if (isWorkLate.GetValueOrDefault())
             {
-                filteredResults = filteredResults.Where(r => TimeSpan.Parse(r.TimeComeLate).TotalMinutes > 0);
+                filteredResults = filteredResults.Where(r => r.TimeComeLate != "00:00");
             }
             if (isLeaveSoon.GetValueOrDefault())
             {
-                filteredResults = filteredResults.Where(r => TimeSpan.Parse(r.TimeLeaveEarly).TotalMinutes > 0);
+                filteredResults = filteredResults.Where(r => r.TimeLeaveEarly != "00:00");
             }
             if (isNotCheckIn.GetValueOrDefault())
             {
@@ -755,19 +761,28 @@ namespace DataAccess.Repository
                                                     .Where(we => we.EmployeeId == request.EmployeeSendRequestId && we.Workslot.DateOfSlot == dateOfRequest)
                                                     .ToListAsync();
 
-            // Assuming you have a default or previous attendance status to reset to; adjust this logic as necessary
-            var defaultAttendanceStatus = await _dbContext.AttendanceStatuses.Include(ass => ass.WorkingStatus)
-                                                               .FirstOrDefaultAsync(att => att.WorkingStatus != null && att.WorkingStatus.Name == "Not Work Yet");
+            var morningId = request.RequestWorkTime.WorkslotEmployeeMorningId;
+            var morningSlot = _dbContext.WorkslotEmployees.FirstOrDefault(we => we.Id == morningId);
+            var afternoonSlot = request.RequestWorkTime.WorkslotEmployee;
 
-            if (defaultAttendanceStatus == null)
+            // Assuming you have a default or previous attendance status to reset to; adjust this logic as necessary
+            var defaultAttendanceStatusMorning = await _dbContext.AttendanceStatuses.FirstOrDefaultAsync(att => att.Id == request.RequestWorkTime.attendanceStatusMorningId);
+            var defaultAttendanceStatusAfternoon = await _dbContext.AttendanceStatuses.FirstOrDefaultAsync(att => att.Id == request.RequestWorkTime.attendanceStatusAfternoonId);
+
+            if (morningSlot != null)
             {
-                throw new Exception("Default attendance status not found.");
+                morningSlot.AttendanceStatus = defaultAttendanceStatusMorning;
+                morningSlot.AttendanceStatusId = defaultAttendanceStatusMorning.Id;
+                morningSlot.CheckInTime = request.RequestWorkTime.RealHourStart;
+                morningSlot.CheckOutTime = morningSlot.Workslot.ToHour;
             }
 
-            foreach (var workslotEmployee in workslotEmployees)
+            if (afternoonSlot != null)
             {
-                workslotEmployee.AttendanceStatus = defaultAttendanceStatus;
-                workslotEmployee.AttendanceStatusId = defaultAttendanceStatus.Id;
+                afternoonSlot.AttendanceStatus = defaultAttendanceStatusAfternoon;
+                afternoonSlot.AttendanceStatusId = defaultAttendanceStatusAfternoon.Id;
+                afternoonSlot.CheckInTime = afternoonSlot.Workslot.FromHour;
+                afternoonSlot.CheckOutTime = request.RequestWorkTime.RealHourEnd;
             }
 
             // Save the changes to the database

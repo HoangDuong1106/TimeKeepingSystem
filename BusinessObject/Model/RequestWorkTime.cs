@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics.CodeAnalysis;
 
@@ -22,6 +23,12 @@ public class RequestWorkTime
 
     [AllowNull]
     public string? NumberOfLeaveEarlyHour { get; set; }
+
+    [AllowNull]
+    public Guid? attendanceStatusMorningId { get; set; }
+
+    [AllowNull]
+    public Guid? attendanceStatusAfternoonId { get; set; }
 
     [Required]
     [ForeignKey("WorkslotEmployee")]

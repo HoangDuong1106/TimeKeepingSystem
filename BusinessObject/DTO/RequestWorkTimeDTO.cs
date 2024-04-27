@@ -5,6 +5,8 @@ namespace BusinessObject.DTO
 {
     public class RequestWorkTimeDTO
     {
+        public Guid? attendanceStatusMorningId { get; set; }
+        public Guid? attendanceStatusAfternoonId { get; set; }
         public string? employeeNumber { get; set; }
 
         public Guid? Id { get; set; }
