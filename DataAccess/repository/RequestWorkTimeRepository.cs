@@ -612,6 +612,7 @@ namespace DataAccess.Repository
             // Step 1: Retrieve the Request by requestId
             var request = await _dbContext.Requests
                                           .Include(r => r.RequestWorkTime)
+                                          .ThenInclude(rwt => rwt.WorkslotEmployee)
                                           .FirstOrDefaultAsync(r => r.Id == requestId);
 
             if (request == null)
@@ -625,11 +626,15 @@ namespace DataAccess.Repository
             // Step 2: Find all WorkslotEmployees that should be updated
             var dateOfTime = request.RequestWorkTime.DateOfSlot;
 
-            var workslotEmployees = await _dbContext.WorkslotEmployees
-                                                    .Include(we => we.Workslot)
-                                                    .Where(we => we.EmployeeId == request.EmployeeSendRequestId)
-                                                    .Where(we => we.Workslot.DateOfSlot == dateOfTime)
-                                                    .ToListAsync();
+            //var workslotEmployees = await _dbContext.WorkslotEmployees
+            //                                        .Include(we => we.Workslot)
+            //                                        .Where(we => we.EmployeeId == request.EmployeeSendRequestId)
+            //                                        .Where(we => we.Workslot.DateOfSlot == dateOfTime)
+            //                                        .ToListAsync();
+
+            var morningId = request.RequestWorkTime.WorkslotEmployeeMorningId;
+            var morningSlot = _dbContext.WorkslotEmployees.FirstOrDefault(we => we.Id == morningId);
+            var afternoonSlot = request.RequestWorkTime.WorkslotEmployee;
 
             // Step 3: Update the AttendanceStatus for these WorkslotEmployees
             var newAttendanceStatus = await _dbContext.AttendanceStatuses
@@ -638,20 +643,31 @@ namespace DataAccess.Repository
 
             if (newAttendanceStatus == null)
             {
-                return new { message = "Attendance status for the WorkingStatus 'Worked' not found" };
+                throw new Exception("Attendance status for the WorkingStatus 'Worked' not found");
             }
 
-            foreach (var workslotEmployee in workslotEmployees)
+            if (morningSlot != null)
             {
-                workslotEmployee.AttendanceStatus = newAttendanceStatus;
-                workslotEmployee.AttendanceStatusId = newAttendanceStatus.Id;
+                morningSlot.AttendanceStatus = newAttendanceStatus;
+                morningSlot.AttendanceStatusId = newAttendanceStatus.Id;
+                morningSlot.CheckInTime = morningSlot.Workslot.FromHour;
+                morningSlot.CheckOutTime = morningSlot.Workslot.ToHour;
             }
+
+            if (afternoonSlot != null)
+            {
+                afternoonSlot.AttendanceStatus = newAttendanceStatus;
+                afternoonSlot.AttendanceStatusId = newAttendanceStatus.Id;
+                afternoonSlot.CheckInTime = afternoonSlot.Workslot.FromHour;
+                afternoonSlot.CheckOutTime = afternoonSlot.Workslot.ToHour;
+            }
+
 
             // Step 4: Save changes to the database
             await _dbContext.SaveChangesAsync();
             await SendRequestWorkTimeToEmployeeFirebase(requestId);
 
-            return new { message = "RequestWorkTime approved and WorkslotEmployee updated successfully" };
+            return new { message = "RequestWorkTime approved and WorkslotEmployee updated successfully\n morningSlot: "+ morningId + "\nafternoon: " + afternoonSlot?.Id };
         }
 
         public async Task<object> RejectWorkTimeRequest(RequestReasonDTO requestObj)

@@ -83,7 +83,7 @@ namespace TimeKeepingSystem.Controllers
         {
             try
             {
-                return Ok(await _service.ApproveRequestWorkTime(requestId));
+                return Ok(await _repository.ApproveRequestWorkTime(requestId));
             } catch(Exception ex)
             {
                 return BadRequest(ex.Message);
