@@ -6,6 +6,7 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text;
+using static DataAccess.Repository.WorkslotEmployeeRepository;
 
 namespace DataAccess.Repository
 {
@@ -378,7 +379,14 @@ namespace DataAccess.Repository
 
                 if (morningSlot != null && afternoonSlot != null)
                 {
-                    var requestWorkTime = _dbContext.RequestWorkTimes.FirstOrDefault(rw => rw.WorkslotEmployeeId == afternoonSlot.Id);
+                    var rejectAndCancelRequestWorkTime = _dbContext.Requests
+                        .Where(r => r.RequestWorkTime != null)
+                        .Where(r => r.Status == RequestStatus.Rejected)
+                        .Where(r => r.Status == RequestStatus.Cancel)
+                        .Select(r => r.RequestWorkTimeId);
+                    var requestWorkTime = _dbContext.RequestWorkTimes
+                        .Where(r => !rejectAndCancelRequestWorkTime.Contains(r.Id))
+                        .FirstOrDefault(rw => rw.WorkslotEmployeeId == afternoonSlot.Id);
                     if (requestWorkTime != null)
                     {
                         continue;
