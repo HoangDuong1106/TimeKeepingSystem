@@ -18,15 +18,18 @@ public class RequestWorkTime
 
     public DateTime? DateOfSlot { get; set; }
     [AllowNull]
-    public float? NumberOfComeLateHour { get; set; }
+    public string? NumberOfComeLateHour { get; set; }
 
     [AllowNull]
-    public float? NumberOfLeaveEarlyHour { get; set; }
+    public string? NumberOfLeaveEarlyHour { get; set; }
 
     [Required]
     [ForeignKey("WorkslotEmployee")]
     public Guid WorkslotEmployeeId { get; set; }
     public WorkslotEmployee WorkslotEmployee { get; set; }
+
+    [AllowNull]
+    public Guid WorkslotEmployeeMorningId { get; set; }
     public bool IsDeleted { get; set; } = false;  // Soft delete flag
 
 }

@@ -28,7 +28,7 @@ namespace TimeKeepingSystem.Controllers
         {
             try
             {
-                return Ok(await _requestOverTimeService.CreateRequestOvertime(dto, employeeId));
+                return Ok(await _requestOverTimeRepository.CreateRequestOvertime(dto, employeeId));
             } catch (Exception ex)
             {
                 return BadRequest(ex.Message);

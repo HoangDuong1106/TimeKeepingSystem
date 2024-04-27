@@ -3,6 +3,7 @@ namespace BusinessObject.DTO
     public class WorkslotEmployeeDTO
     {
         public Guid? workslotEmployeeId { get; set; }
+        public Guid? workslotEmployeeMorningId { get; set; }
         public DateTime? Date { get; set; }
         public string? CheckInTime { get; set; }
         public string? CheckOutTime { get; set; }

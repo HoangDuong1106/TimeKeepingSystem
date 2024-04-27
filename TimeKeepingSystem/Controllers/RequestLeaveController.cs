@@ -199,6 +199,18 @@ namespace TimeKeepingSystem.Controllers
                 return BadRequest(e.Message);
             }
         }
+
+        //public ActionResult<object> GetRequestLeaveAllEmployeeInHrTeam(string? nameSearch, int status, Guid? employeeId = null)
+        //{
+        //    try
+        //    {
+        //        return Ok( _requestLeaveRepository.GetRequestLeaveAllEmployeeInHrTeam(nameSearch, status, employeeId));
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        return BadRequest(e.Message);
+        //    }
+        //}
     }
 }
 

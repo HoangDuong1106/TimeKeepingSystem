@@ -153,6 +153,19 @@ namespace TimeKeepingSystem.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        [HttpPatch("move-all-hr-to-team-hr")]
+        public async Task<ActionResult<List<object>>> MoveHREmployeesToNewDepartmentAsync()
+        {
+            try
+            {
+                return Ok(await _employeeRepo.MoveHREmployeesToNewDepartmentAsync(Guid.Parse("d4a6ec67-3d4e-4e5c-8fe3-64d631f27ab0")));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }
 

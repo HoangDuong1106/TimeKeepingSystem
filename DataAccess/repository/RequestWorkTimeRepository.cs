@@ -42,6 +42,7 @@ namespace DataAccess.Repository
                  .ToList();
             list.ForEach(r =>
             {
+                var morningSlot = _dbContext.WorkslotEmployees.Include(we => we.Workslot).FirstOrDefault(w => w.Id == r.RequestWorkTime.WorkslotEmployeeMorningId);
                 result.Add(new RequestWorkTimeDTO()
                 {
                     Id = r.Id,
@@ -55,6 +56,10 @@ namespace DataAccess.Repository
                     DateOfWorkTime = r.RequestWorkTime.DateOfSlot?.ToString("yyyy/MM/dd"),
                     status = (int)r.Status,
                     statusName = r.Status.ToString(),
+                    SlotStart = morningSlot.Workslot?.FromHour,
+                    SlotEnd = r.RequestWorkTime?.WorkslotEmployee?.Workslot?.ToHour,
+                    CheckInTime = morningSlot?.CheckInTime,
+                    CheckOutTime = r.RequestWorkTime?.WorkslotEmployee?.CheckInTime,
                     reason = r.Reason,
                     reasonReject = r.Message,
                     linkFile = r.PathAttachmentFile,
@@ -85,6 +90,7 @@ namespace DataAccess.Repository
                 DateOfSlot = workslotEmployee.Workslot.DateOfSlot,
                 WorkslotEmployeeId = dto.WorkslotEmployeeId,
                 WorkslotEmployee = workslotEmployee,
+                WorkslotEmployeeMorningId = dto.workslotEmployeeMorningId,
                 IsDeleted = false  // Set the soft delete flag to false
             };
 
@@ -297,30 +303,30 @@ namespace DataAccess.Repository
         //    foreach (var group in groupedByDate)
         //    {
         //        var morningSlot = group.FirstOrDefault(w => w.Workslot.IsMorning);
-        //        var afternoonSlot = group.FirstOrDefault(w => !w.Workslot.IsMorning);
+        //        var morningSlot = group.FirstOrDefault(w => !w.Workslot.IsMorning);
 
-        //        if (morningSlot != null && afternoonSlot != null &&
+        //        if (morningSlot != null && morningSlot != null &&
         //            !string.IsNullOrEmpty(morningSlot.CheckInTime) &&
-        //            !string.IsNullOrEmpty(afternoonSlot.CheckOutTime))
+        //            !string.IsNullOrEmpty(morningSlot.CheckOutTime))
         //        {
-        //            double duration = DateTime.ParseExact(afternoonSlot.CheckOutTime, "HH:mm", CultureInfo.InvariantCulture).Subtract(DateTime.ParseExact(morningSlot.CheckInTime, "HH:mm", CultureInfo.InvariantCulture)).TotalHours;
+        //            double duration = DateTime.ParseExact(morningSlot.CheckOutTime, "HH:mm", CultureInfo.InvariantCulture).Subtract(DateTime.ParseExact(morningSlot.CheckInTime, "HH:mm", CultureInfo.InvariantCulture)).TotalHours;
 
         //            if (duration < 9)
         //            {
-        //                var request = _dbContext.RequestWorkTimes.FirstOrDefault(rw => rw.WorkslotEmployeeId == afternoonSlot.Id);
+        //                var request = _dbContext.RequestWorkTimes.FirstOrDefault(rw => rw.WorkslotEmployeeId == morningSlot.Id);
         //                if (request != null)
         //                {
         //                    var request = _dbContext.Requests.FirstOrDefault(r => r.RequestWorkTimeId == request.Id);
         //                    result.Add(new WorkslotEmployeeDTO
         //                    {
-        //                        workslotEmployeeId = afternoonSlot.Id,
-        //                        Date = afternoonSlot.Workslot.DateOfSlot,
+        //                        workslotEmployeeId = morningSlot.Id,
+        //                        Date = morningSlot.Workslot.DateOfSlot,
         //                        SlotStart = morningSlot.Workslot.FromHour,
         //                        RequestId = request.Id,
-        //                        SlotEnd = afternoonSlot.Workslot.ToHour,
+        //                        SlotEnd = morningSlot.Workslot.ToHour,
         //                        CheckInTime = morningSlot.CheckInTime,
-        //                        CheckOutTime = afternoonSlot.CheckOutTime,
-        //                        TimeLeaveEarly = (DateTime.ParseExact(afternoonSlot.Workslot.ToHour, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(afternoonSlot.CheckOutTime, "HH:mm", CultureInfo.InvariantCulture)).TotalHours,
+        //                        CheckOutTime = morningSlot.CheckOutTime,
+        //                        TimeLeaveEarly = (DateTime.ParseExact(morningSlot.Workslot.ToHour, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(morningSlot.CheckOutTime, "HH:mm", CultureInfo.InvariantCulture)).TotalHours,
         //                        TimeComeLate = (DateTime.ParseExact(morningSlot.CheckInTime, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(morningSlot.Workslot.FromHour, "HH:mm", CultureInfo.InvariantCulture)).TotalHours,
         //                        statusName = request.Status.ToString(),
         //                        reason = request.Reason,
@@ -331,13 +337,13 @@ namespace DataAccess.Repository
         //                {
         //                    result.Add(new WorkslotEmployeeDTO
         //                    {
-        //                        workslotEmployeeId = afternoonSlot.Id,
-        //                        Date = afternoonSlot.Workslot.DateOfSlot,
+        //                        workslotEmployeeId = morningSlot.Id,
+        //                        Date = morningSlot.Workslot.DateOfSlot,
         //                        SlotStart = morningSlot.Workslot.FromHour,
-        //                        SlotEnd = afternoonSlot.Workslot.ToHour,
+        //                        SlotEnd = morningSlot.Workslot.ToHour,
         //                        CheckInTime = morningSlot.CheckInTime,
-        //                        CheckOutTime = afternoonSlot.CheckOutTime,
-        //                        TimeLeaveEarly = (DateTime.ParseExact(afternoonSlot.Workslot.ToHour, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(afternoonSlot.CheckOutTime, "HH:mm", CultureInfo.InvariantCulture)).TotalHours,
+        //                        CheckOutTime = morningSlot.CheckOutTime,
+        //                        TimeLeaveEarly = (DateTime.ParseExact(morningSlot.Workslot.ToHour, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(morningSlot.CheckOutTime, "HH:mm", CultureInfo.InvariantCulture)).TotalHours,
         //                        TimeComeLate = (DateTime.ParseExact(morningSlot.CheckInTime, "HH:mm", CultureInfo.InvariantCulture) - DateTime.ParseExact(morningSlot.Workslot.FromHour, "HH:mm", CultureInfo.InvariantCulture)).TotalHours,
         //                        statusName = "Lack Of Work Time",
         //                        reason = null,
@@ -379,13 +385,13 @@ namespace DataAccess.Repository
                         //var request = _dbContext.Requests.FirstOrDefault(r => r.RequestWorkTimeId == requestWorkTime.Id);
                         //result.Add(new WorkslotEmployeeDTO
                         //{
-                        //    workslotEmployeeId = afternoonSlot.Id,
-                        //    Date = afternoonSlot.Workslot.DateOfSlot,
+                        //    workslotEmployeeId = morningSlot.Id,
+                        //    Date = morningSlot.Workslot.DateOfSlot,
                         //    SlotStart = morningSlot.Workslot.FromHour,
-                        //    SlotEnd = afternoonSlot.Workslot.ToHour,
+                        //    SlotEnd = morningSlot.Workslot.ToHour,
                         //    CheckInTime = morningSlot.CheckInTime,
-                        //    CheckOutTime = afternoonSlot.CheckOutTime,
-                        //    TimeLeaveEarly = CalculateTimeDifference(afternoonSlot.Workslot.ToHour, afternoonSlot.CheckOutTime, true),
+                        //    CheckOutTime = morningSlot.CheckOutTime,
+                        //    TimeLeaveEarly = CalculateTimeDifference(morningSlot.Workslot.ToHour, morningSlot.CheckOutTime, true),
                         //    TimeComeLate = CalculateTimeDifference(morningSlot.CheckInTime, morningSlot.Workslot.FromHour, false),
                         //    deciderId = request.EmployeeIdLastDecider,
                         //    deciderName = request.EmployeeIdLastDecider != null ? _dbContext.Employees.FirstOrDefault(e => e.Id == request.EmployeeIdLastDecider)?.FirstName : null,
@@ -398,13 +404,14 @@ namespace DataAccess.Repository
                     else
                     {
                         if (morningSlot.CheckInTime == null) continue;
-                            //if (afternoonSlot.Employee.DepartmentId == null) continue;
+                            //if (morningSlot.Employee.DepartmentId == null) continue;
                             var checkIn = DateTime.ParseExact(morningSlot.CheckInTime, "HH:mm", CultureInfo.InvariantCulture);
                         if (afternoonSlot.CheckOutTime == null)
                         {
                             result.Add(new WorkslotEmployeeDTO
                             {
                                 workslotEmployeeId = afternoonSlot.Id,
+                                workslotEmployeeMorningId = morningSlot.Id,
                                 Date = afternoonSlot.Workslot.DateOfSlot,
                                 SlotStart = morningSlot.Workslot.FromHour,
                                 SlotEnd = afternoonSlot.Workslot.ToHour,
@@ -491,8 +498,6 @@ namespace DataAccess.Repository
             return timeSpan.TotalMinutes > 0 ? timeSpan.ToString(@"hh\:mm") : "00:00";
         }
 
-
-
         public List<RequestWorkTimeDTO> GetAllRequestWorkTime(string? nameSearch, int? status, string? month, Guid? employeeIdd = null)
         {
             var result = new List<RequestWorkTimeDTO>();
@@ -575,8 +580,8 @@ namespace DataAccess.Repository
                     deciderId = r.EmployeeIdLastDecider,
                     RealHourStart = r.RequestWorkTime?.RealHourStart,
                     RealHourEnd = r.RequestWorkTime?.RealHourEnd,
-                    NumberOfComeLateHour = r.RequestWorkTime?.NumberOfComeLateHour ?? 0,
-                    NumberOfLeaveEarlyHour = r.RequestWorkTime?.NumberOfLeaveEarlyHour ?? 0,
+                    NumberOfComeLateHour = r.RequestWorkTime?.NumberOfComeLateHour ?? null,
+                    NumberOfLeaveEarlyHour = r.RequestWorkTime?.NumberOfLeaveEarlyHour ?? null,
                     TimeInMonth = timeInMonth,
                     TimeInYear = timeInYear,
                     WorkslotEmployeeId = r.RequestWorkTime?.WorkslotEmployeeId ?? Guid.Empty,
@@ -876,8 +881,8 @@ namespace DataAccess.Repository
                 deciderId = request.EmployeeIdLastDecider,
                 RealHourStart = requestWorkTime?.RealHourStart,
                 RealHourEnd = requestWorkTime?.RealHourEnd,
-                NumberOfComeLateHour = requestWorkTime?.NumberOfComeLateHour ?? 0,
-                NumberOfLeaveEarlyHour = requestWorkTime?.NumberOfLeaveEarlyHour ?? 0,
+                NumberOfComeLateHour = requestWorkTime?.NumberOfComeLateHour ?? null,
+                NumberOfLeaveEarlyHour = requestWorkTime?.NumberOfLeaveEarlyHour ?? null,
                 WorkslotEmployeeId = requestWorkTime?.WorkslotEmployeeId ?? Guid.Empty,
                 SlotStart = requestWorkTime?.WorkslotEmployee?.Workslot?.FromHour,
                 SlotEnd = requestWorkTime?.WorkslotEmployee?.Workslot?.ToHour,

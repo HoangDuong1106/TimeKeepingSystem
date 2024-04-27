@@ -24,7 +24,7 @@ namespace TimeKeepingSystem.Controllers
         {
             try
             {
-                return Ok(await _service.CreateRequestWorkTime(dto, employeeId));
+                return Ok(await _repository.CreateRequestWorkTime(dto, employeeId));
             } catch (Exception ex)
             {
                 return BadRequest(ex.Message);

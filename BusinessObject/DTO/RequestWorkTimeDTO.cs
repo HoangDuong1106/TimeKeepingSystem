@@ -13,9 +13,10 @@ namespace BusinessObject.DTO
         public string? Name { get; set; }
         public string? RealHourStart { get; set; }
         public string? RealHourEnd { get; set; }
-        public float? NumberOfComeLateHour { get; set; }
-        public float? NumberOfLeaveEarlyHour { get; set; }
+        public string? NumberOfComeLateHour { get; set; }
+        public string? NumberOfLeaveEarlyHour { get; set; }
         public Guid WorkslotEmployeeId { get; set; }
+        public Guid workslotEmployeeMorningId { get; set; }
         public string? SlotStart { get; set; }
         public string? SlotEnd { get; set; }
         public double? TimeInMonth { get; set; }
@@ -29,6 +30,7 @@ namespace BusinessObject.DTO
         public string? submitDate { get; set; }
         public string? reasonReject { get; set; }
         public Guid? deciderId { get; set; }
-
+        public string? CheckInTime { get; set; }
+        public string? CheckOutTime { get; set; }
     }
 }

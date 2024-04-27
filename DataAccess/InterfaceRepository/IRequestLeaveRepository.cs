@@ -12,6 +12,7 @@ namespace DataAccess.InterfaceRepository { public interface IRequestLeaveReposit
         Task<List<object>> GetApprovedLeaveDaysByTypeAsync(Guid employeeId);
         Task<object> GetCurrentYearLeaveInfo(Guid employeeId, Guid leaveTypeId);
         object GetRequestLeaveAllEmployee(string? nameSearch, int status, Guid? employeeId);
+        object GetRequestLeaveAllEmployeeInHrTeam(string? nameSearch, int status, Guid? employeeId = null);
         object GetRequestLeaveByRequestId(Guid requestId);
         object GetRequestLeaveOfEmployeeById(Guid employeeId);
         Task<WorkDateSettingDTO> GetWorkDateSettingFromEmployeeId(Guid employeeId);

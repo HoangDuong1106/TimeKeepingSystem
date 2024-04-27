@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 using System.Text.Json;
 using System.Text;
+using Microsoft.VisualBasic;
 
 namespace DataAccess.Repository
 {
@@ -89,6 +90,57 @@ namespace DataAccess.Repository
             {
                 throw new Exception("lack of 1 in 4 field: timeStart, NumberOfHour, Date, reason");
             }
+
+            // Parse times
+            var startTime = DateTime.ParseExact(dto.timeStart, "HH:mm", CultureInfo.InvariantCulture);
+            var endTime = DateTime.ParseExact(dto.timeEnd, "HH:mm", CultureInfo.InvariantCulture);
+
+            // Check if start time is earlier than end time
+            if (startTime >= endTime)
+            {
+                throw new Exception("Start time must be earlier than end time.");
+            }
+
+            // Calculate duration and validate it
+            var duration = (endTime - startTime).TotalHours;
+            if (duration < 1 || duration > 4)
+            {
+                throw new Exception("Duration must be at least 1 hours and no more than 4 hours.");
+            }
+
+            var departmentId = _dbContext.Employees.FirstOrDefault(e => e.Id == employeeId)?.DepartmentId;
+            if (departmentId == null) throw new Exception("The Employee not in any Department can not create OverTime request");
+
+            var dtoDateParsed = DateTime.ParseExact(dto.Date, "yyyy/MM/dd", CultureInfo.InvariantCulture);
+            var workSlots = _dbContext.Workslots
+            .Where(ws => ws.DepartmentId == departmentId && ws.DateOfSlot.Date == dtoDateParsed.Date)
+            .ToList();
+            DateTime slotStartTime = DateTime.Now;
+            DateTime slotEndTime = DateTime.Now;
+            bool shouldCheckOverlap1 = false;
+            bool shouldCheckOverlap2 = false;
+            // Check each work slot for a time overlap
+            foreach (var slot in workSlots)
+            {
+                if (slot.IsMorning)
+                {
+                    slotStartTime = DateTime.ParseExact(slot.FromHour, "HH:mm", CultureInfo.InvariantCulture);
+                    shouldCheckOverlap1 = true;
+                }
+                
+                if (!slot.IsMorning)
+                {
+                    slotEndTime = DateTime.ParseExact(slot.ToHour, "HH:mm", CultureInfo.InvariantCulture);
+                    shouldCheckOverlap2 = true;
+                }
+
+            }
+            
+            if (shouldCheckOverlap1 && shouldCheckOverlap2 && CheckForTimeOverlap(slotStartTime, slotEndTime, startTime, endTime))
+            {
+                throw new Exception("the OT time overlap the worktime period");
+            }
+
             var workingStatus = _dbContext.WorkingStatuses.FirstOrDefault(ws => ws.Id == dto.workingStatusId);
             if (workingStatus == null)
             {
@@ -117,7 +169,7 @@ namespace DataAccess.Repository
             }
 
             // Assuming employeeSendRequest is an object of type Employee
-            var departmentId = employeeSendRequest.DepartmentId;
+            //var departmentId = employeeSendRequest.DepartmentId;
             Guid? managerId = null;
             if (departmentId != null)
             {
@@ -202,6 +254,18 @@ namespace DataAccess.Repository
             }
         }
 
+        public bool CheckForTimeOverlap(DateTime startTimeA, DateTime endTimeA, DateTime startTimeB, DateTime endTimeB)
+        {
+            // Check if the times are valid before comparing them
+            if (startTimeA >= endTimeA || startTimeB >= endTimeB)
+            {
+                // Optional: Handle invalid times differently, perhaps log or alert.
+                return false; // Assuming overlapping cannot be determined if times are invalid.
+            }
+
+            // Return true if there's an overlap, false otherwise
+            return startTimeA < endTimeB && endTimeA > startTimeB;
+        }
 
         public async Task<object> EditRequestOvertimeOfEmployee(EditRequestOverTimeDTO dto, Guid employeeId)
         {

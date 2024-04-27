@@ -386,5 +386,47 @@ namespace DataAccess.Repository
             return newEmployeeNumber;
         }
 
+        public async Task<List<object>> MoveHREmployeesToNewDepartmentAsync(Guid newDepartmentId)
+        {
+            var newDepartment = _dbContext.Departments.Include(d => d.Employees).Where(d => d.Id == newDepartmentId).FirstOrDefault();
+            var managerRole = _dbContext.Roles.FirstOrDefault(d => d.ID == Guid.Parse("c4345666-4d7b-11ee-be56-0242ac120002"));
+
+            if (newDepartment == null) throw new Exception("New Department Not Exsiting");
+            // Retrieve all employees who are HR
+            var hrEmployees = await _dbContext.Employees
+                .Include(e => e.UserAccount)
+                .ThenInclude(ua => ua.Role)
+                .Include(e => e.Department)
+                .Where(e => e.UserAccount.Role.Name == "HR")
+                .Where(e => e.DepartmentId != newDepartmentId)
+                .ToListAsync();
+            List<object> newHrInTeamHr = new List<object>();
+            foreach (var hrEmployee in hrEmployees)
+            {
+                hrEmployee.DepartmentId = newDepartmentId;
+                hrEmployee.Department = newDepartment;
+                newDepartment.Employees.Add(hrEmployee);
+                if (hrEmployee.Email == "hr@gmail.com") newDepartment.ManagerId = hrEmployee.Id;
+                hrEmployee.UserAccount.Role = managerRole;
+                hrEmployee.UserAccount.RoleID = managerRole.ID;
+                newHrInTeamHr.Add(new
+                {
+                    hrEmployee.Id,
+                    FullName = hrEmployee.FirstName + " " + hrEmployee.LastName,
+                    hrEmployee.Email,
+                    NewDepartmentName = hrEmployee.Department.Name,
+                    NewDepartmentId = hrEmployee.DepartmentId,
+                });
+            }
+
+            var bigHR = _dbContext.Employees.Include(e => e.UserAccount).ThenInclude(ua => ua.Role).FirstOrDefault(e => e.Email == "hr@gmail.com");
+            bigHR.UserAccount.Role = managerRole;
+            bigHR.UserAccount.RoleID = managerRole.ID;
+
+            await _dbContext.SaveChangesAsync();
+            return newHrInTeamHr;
+        }
+
+
     }
 }
