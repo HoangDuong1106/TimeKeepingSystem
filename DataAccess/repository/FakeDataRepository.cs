@@ -17,9 +17,6 @@ namespace DataAccess.Repository
         {
             _dbContext = context;
         }
-
-
-
         
     }
 }
