@@ -1040,7 +1040,7 @@ namespace DataAccess.Repository
                 throw new Exception("Employee not found.");
             }
 
-            DateTime monthStart = DateTime.ParseExact(month, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+            DateTime monthStart = DateTime.ParseExact(month, "yyyy/MM/dd", CultureInfo.InvariantCulture);
             DateTime monthEnd = new DateTime(monthStart.Year, monthStart.Month, DateTime.DaysInMonth(monthStart.Year, monthStart.Month));
 
             var workSlotEmployees = await _dbContext.WorkslotEmployees

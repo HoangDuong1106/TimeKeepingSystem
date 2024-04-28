@@ -451,7 +451,6 @@ namespace DataAccess.Repository
             return true;
         }
 
-
         public async Task<WorkDateSettingDTO> GetWorkDateSettingFromEmployeeId(Guid employeeId)
         {
             var employee = _dbContext.Employees.Include(e => e.Department).ThenInclude(d => d.WorkTrackSetting).ThenInclude(wts => wts.WorkDateSetting).Where(e => e.Id == employeeId).FirstOrDefault();
