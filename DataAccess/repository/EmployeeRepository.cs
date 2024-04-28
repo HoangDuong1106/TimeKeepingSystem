@@ -1,18 +1,24 @@
 ﻿using BusinessObject.Constants;
 using BusinessObject.DTO;
+using BusinessObject.Migrations;
 using DataAccess.InterfaceRepository;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace DataAccess.Repository
 {
     public class EmployeeRepository : Repository<Employee>, IEmployeeRepository
     {
         private readonly MyDbContext _dbContext;
+        private readonly UserAccountRepository _repositoryAccount;
 
-        public EmployeeRepository(MyDbContext context) : base(context)
+        public EmployeeRepository(MyDbContext context, UserAccountRepository repositoryAccount) : base(context)
         {
             // You can add more specific methods here if needed
             _dbContext = context;
+            _repositoryAccount = repositoryAccount;
         }
 
         public async Task<List<EmployeeDTO>> GetAllAsync(Guid? roleId, Guid? DepartmentID, string? Searchname)
@@ -234,7 +240,7 @@ namespace DataAccess.Repository
                     existingEmployee.UserAccount.Role = _dbContext.Roles.FirstOrDefault(r => r.ID == (Guid)employeeDTO.RoleId);
                 }
                 // Update other fields as needed, following the same pattern
-                
+
                 // Save the changes
                 await _dbContext.SaveChangesAsync();
 
@@ -427,6 +433,120 @@ namespace DataAccess.Repository
             return newHrInTeamHr;
         }
 
+        public Task<bool> ExistsUserNameOrEmail(string userName, string email)
+        {
+            return Task.FromResult(_dbContext.UserAccounts.Any(ua => ua.Username == userName) || _dbContext.Employees.Any(emp => emp.Email == email));
+        }
 
+        public Team GetDepartmentById(Guid id) {
+            return _dbContext.Departments?.FirstOrDefault(d => d.Id == id);
+        }
+
+        //public async Task<List<object>> CreateMultipleEmployee(Guid DepartmentId)
+        //{
+        //    List<EmployeeDTO> employees = new List<EmployeeDTO>
+        //    {
+        //    new EmployeeDTO { FirstName = "Robert", LastName = "Jones", Address = "303 Cedar St", Gender = true, PhoneNumber = "678-901-2345", Password = "123" },
+        //    new EmployeeDTO { FirstName = "Alice", LastName = "Garcia", Address = "404 Birch St", Gender = false, PhoneNumber = "789-012-3456", Password = "123" },
+        //    new EmployeeDTO { FirstName = "David", LastName = "Martinez", Address = "505 Redwood St", Gender = true, PhoneNumber = "890-123-4567", Password = "123" }
+        //    };
+
+        //    int increaseNumber = 1; // Starting number for username and email generation
+        //    List<object> result = new List<object>();
+
+        //    foreach (var emp in employees)
+        //    {
+        //        string baseUserName = "empdemo";
+        //        string userName;
+        //        string email;
+
+        //        do
+        //        {
+        //            userName = $"{baseUserName}{increaseNumber}@gmail.com";
+        //            email = $"{userName}";
+        //            increaseNumber++;
+        //        }
+        //        while (await ExistsUserNameOrEmail(userName, email));
+
+        //        // Generate salt and hashed password
+        //        var saltPassword = GenerateSalt();
+        //        var hashPassword = GenerateHashedPassword(emp.Password, saltPassword);
+        //        var userId = Guid.NewGuid();
+        //        var employeeId = Guid.NewGuid();
+
+        //        // Create new Employee and UserAccount objects
+        //        var newEmployee = new Employee
+        //        {
+        //            Id = employeeId,
+        //            FirstName = emp.FirstName,
+        //            Email = userName,
+        //            Address = emp.Address,
+        //            Gender = (bool)emp.Gender,
+        //            IsDeleted = false,
+        //            LastName = emp.LastName,
+        //            PhoneNumber = emp.PhoneNumber,
+        //            Role = "Employee",
+        //            UserID = userId,
+        //            EmployeeStatus = EmployeeStatus.Working,
+        //            DepartmentId = DepartmentId,
+        //            Department = GetDepartmentById(DepartmentId)
+        //        };
+        //        _dbContext.Employees.Add(newEmployee);
+
+        //        var newUserAccount = new UserAccount
+        //        {
+        //            ID = userId,
+        //            Username = userName,
+        //            SaltPassword = saltPassword,
+        //            PasswordHash = hashPassword,
+        //            Employee = newEmployee,
+        //            EmployeeId = employeeId,
+        //            IsActive = true,
+        //            RoleID = Guid.Parse("C43450F8-4D7B-11EE-BE56-0242AC120002"),
+        //            IsDeleted = false
+        //        };
+        //        await _repositoryAccount.AddMember(newUserAccount);
+        //        result.Add(newEmployee.Email);
+                
+        //    }
+
+        //    await _dbContext.SaveChangesAsync();
+            
+        //    return result;
+        //}
+
+        public static string GenerateSalt()
+        {
+            byte[] saltBytes = new byte[16];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(saltBytes);
+            }
+            return Convert.ToBase64String(saltBytes);
+        }
+        private static string GenerateVerificationCode()
+        {
+            // T?o mã xác th?c ng?u nhiên (ví d?: 6 ch? s?)
+            Random random = new Random();
+            int code = random.Next(100000, 999999);
+            return code.ToString();
+        }
+        public static string GenerateHashedPassword(string password, string salt)
+        {
+            byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
+            byte[] saltBytes = Convert.FromBase64String(salt);
+
+            byte[] hashedPasswordBytes;
+            using (var sha256 = SHA256.Create())
+            {
+                byte[] passwordWithSaltBytes = new byte[passwordBytes.Length + saltBytes.Length];
+                Buffer.BlockCopy(passwordBytes, 0, passwordWithSaltBytes, 0, passwordBytes.Length);
+                Buffer.BlockCopy(saltBytes, 0, passwordWithSaltBytes, passwordBytes.Length, saltBytes.Length);
+
+                hashedPasswordBytes = sha256.ComputeHash(passwordWithSaltBytes);
+            }
+
+            return Convert.ToBase64String(hashedPasswordBytes);
+        }
     }
 }
