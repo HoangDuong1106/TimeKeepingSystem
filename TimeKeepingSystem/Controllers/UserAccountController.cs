@@ -11,7 +11,6 @@ using OfficeOpenXml;
 using DataAccess.InterfaceService;
 using BusinessObject.DTO;
 using DataAccess.InterfaceRepository;
-using System.Security.Principal;
 
 namespace TimeKeepingSystem.Controllers
 {
@@ -231,6 +230,8 @@ namespace TimeKeepingSystem.Controllers
             }
         }
 
+
+
         [HttpPut("ChangePassword")]
         [Authorize]
         public async Task<IActionResult> ChangPassword(ChangePasswordDTO acc)
@@ -345,76 +346,6 @@ namespace TimeKeepingSystem.Controllers
             catch (Exception ex)
             {
                 return StatusCode(409, new { StatusCode = 409, Message = ex.Message });
-            }
-        }
-
-        [HttpPatch("update-new-password")]
-        public async Task<IActionResult> UpdatePassword(Guid employeeId, string newPassword)
-        {
-            try
-            {
-                // Retrieve the user account from the repository
-                List<UserAccount> accs = await repositoryAccount.GetMembers();
-
-                UserAccount account = accs.FirstOrDefault(acc => acc.Employee.Id == employeeId);
-                if (account == null)
-                {
-                    return NotFound(new { StatusCode = 404, Message = "Account not found" });
-                }
-
-                // Generate new salt and hash password
-                var newSalt = GenerateSalt();
-                var newHashedPassword = GenerateHashedPassword(newPassword, newSalt);
-
-                // Update account with new salt and hashed password
-                account.SaltPassword = newSalt;
-                account.PasswordHash = newHashedPassword;
-
-                // Save the updated account back to the database
-                await repositoryAccount.UpdateMember(account);
-
-                return Ok(new { StatusCode = 200, Message = "Password updated successfully. Password is |" + newPassword + "|" });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { StatusCode = 500, Message = ex.Message });
-            }
-        }
-
-        [HttpPatch("update-new-password-to-all-acc")]
-        public async Task<IActionResult> UpdatePasswordToAllAcc(string newPassword)
-        {
-            try
-            {
-                // Retrieve the user account from the repository
-                List<UserAccount> accs = await repositoryAccount.GetMembers();
-
-                if (accs == null || !accs.Any())
-                {
-                    return NotFound(new { StatusCode = 404, Message = "Account not found" });
-                }
-
-                // Generate new salt and hash password
-                
-
-                // Update account with new salt and hashed password
-                foreach (UserAccount acc in accs)
-                {
-                    var newSalt = GenerateSalt();
-                    var newHashedPassword = GenerateHashedPassword(newPassword, newSalt);
-                    acc.SaltPassword = newSalt;
-                    acc.PasswordHash = newHashedPassword;
-                    await repositoryAccount.UpdateMember(acc);
-                } 
-
-                // Save the updated account back to the database
-                
-
-                return Ok(new { StatusCode = 200, Message = "Password updated all Account successfully",newPassword });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { StatusCode = 500, Message = ex.Message });
             }
         }
 
