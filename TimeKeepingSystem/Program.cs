@@ -76,6 +76,77 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
     };
 });
 builder.Services.AddSwaggerGen();
+// Register repository classes
+builder.Services.AddScoped<IRepository<AttendanceStatus>, AttendanceStatusRepository>();
+builder.Services.AddScoped<IRepository<Team>, TeamRepository>();
+builder.Services.AddScoped<IRepository<Holiday>, HolidayRepository>();
+builder.Services.AddScoped<IRepository<DepartmentHolidayException>, DepartmentHolidayExceptionRepository>();
+builder.Services.AddScoped<IRepository<Employee>, EmployeeRepository>();
+builder.Services.AddScoped<IRepository<LeaveSetting>, LeaveSettingRepository>();
+builder.Services.AddScoped<IRepository<LeaveType>, LeaveTypeRepository>();
+builder.Services.AddScoped<IRepository<Request>, RequestRepository>();
+builder.Services.AddScoped<IRepository<RequestLeave>, RequestLeaveRepository>();
+builder.Services.AddScoped<IRepository<RequestOverTime>, RequestOverTimeRepository>();
+builder.Services.AddScoped<IRepository<RequestWorkTime>, RequestWorkTimeRepository>();
+builder.Services.AddScoped<IRepository<RiskPerformanceEmployee>, RiskPerformanceEmployeeRepository>();
+builder.Services.AddScoped<IRepository<RiskPerformanceSetting>, RiskPerformanceSettingRepository>();
+builder.Services.AddScoped<IRepository<WorkDateSetting>, WorkDateSettingRepository>();
+builder.Services.AddScoped<IRepository<WorkingStatus>, WorkingStatusRepository>();
+builder.Services.AddScoped<IRepository<WorkPermissionSetting>, WorkPermissionSettingRepository>();
+builder.Services.AddScoped<IRepository<Workslot>, WorkslotRepository>();
+builder.Services.AddScoped<IRepository<WorkslotEmployee>, WorkslotEmployeeRepository>();
+builder.Services.AddScoped<IRepository<WorkTimeSetting>, WorkTimeSettingRepository>();
+builder.Services.AddScoped<IRepository<WorkTrackSetting>, WorkTrackSettingRepository>();
+builder.Services.AddScoped<IRepository<Wifi>, WifiRepository>();
+
+builder.Services.AddScoped<IAttendanceStatusRepository, AttendanceStatusRepository>();
+builder.Services.AddScoped<IDepartmentHolidayExceptionRepository, DepartmentHolidayExceptionRepository>();
+builder.Services.AddScoped<IHolidayRepository, HolidayRepository>();
+builder.Services.AddScoped<ITeamRepository, TeamRepository>();
+builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
+builder.Services.AddScoped<ILeaveSettingRepository, LeaveSettingRepository>();
+builder.Services.AddScoped<ILeaveTypeRepository, LeaveTypeRepository>();
+builder.Services.AddScoped<IRequestLeaveRepository, RequestLeaveRepository>();
+builder.Services.AddScoped<IRequestOverTimeRepository, RequestOverTimeRepository>();
+builder.Services.AddScoped<IRequestRepository, RequestRepository>();
+builder.Services.AddScoped<IRequestWorkTimeRepository, RequestWorkTimeRepository>();
+builder.Services.AddScoped<IRiskPerformanceEmployeeRepository, RiskPerformanceEmployeeRepository>();
+builder.Services.AddScoped<IRiskPerformanceSettingRepository, RiskPerformanceSettingRepository>();
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+builder.Services.AddScoped<IUserAccountRepository, UserAccountRepository>();
+builder.Services.AddScoped<IWorkDateSettingRepository, WorkDateSettingRepository>();
+builder.Services.AddScoped<IWorkingStatusRepository, WorkingStatusRepository>();
+builder.Services.AddScoped<IWorkPermissionSettingRepository, WorkPermissionSettingRepository>();
+builder.Services.AddScoped<IWorkslotEmployeeRepository, WorkslotEmployeeRepository>();
+builder.Services.AddScoped<IWorkslotRepository, WorkslotRepository>();
+builder.Services.AddScoped<IWorkTimeSettingRepository, WorkTimeSettingRepository>();
+builder.Services.AddScoped<IWorkTrackSettingRepository, WorkTrackSettingRepository>();
+builder.Services.AddScoped<IWifiRepository, WifiRepository>();
+
+
+builder.Services.AddScoped<IAttendanceStatusService, AttendanceStatusService>();
+builder.Services.AddScoped<IDepartmentHolidayExceptionService, DepartmentHolidayExceptionService>();
+builder.Services.AddScoped<IDepartmentHolidayService, DepartmentHolidayService>();
+builder.Services.AddScoped<ITeamService, TeamService>();
+builder.Services.AddScoped<IEmployeeService, EmployeeService>();
+builder.Services.AddScoped<ILeaveSettingService, LeaveSettingService>();
+builder.Services.AddScoped<ILeaveTypeService, LeaveTypeService>();
+builder.Services.AddScoped<IRequestLeaveService, RequestLeaveService>();
+builder.Services.AddScoped<IRequestOverTimeService, RequestOverTimeService>();
+builder.Services.AddScoped<IRequestService, RequestService>();
+builder.Services.AddScoped<IRequestWorkTimeService, RequestWorkTimeService>();
+builder.Services.AddScoped<IRiskPerformanceEmployeeService, RiskPerformanceEmployeeService>();
+builder.Services.AddScoped<IRiskPerformanceSettingService, RiskPerformanceSettingService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
+builder.Services.AddScoped<IUserAccountService, UserAccountService>();
+builder.Services.AddScoped<IWorkDateSettingService, WorkDateSettingService>();
+builder.Services.AddScoped<IWorkingStatusService, WorkingStatusService>();
+builder.Services.AddScoped<IWorkPermissionSettingService, WorkPermissionSettingService>();
+builder.Services.AddScoped<IWorkslotEmployeeService, WorkslotEmployeeService>();
+builder.Services.AddScoped<IWorkslotService, WorkslotService>();
+builder.Services.AddScoped<IWorkTimeSettingService, WorkTimeSettingService>();
+builder.Services.AddScoped<IWorkTrackSettingService, WorkTrackSettingService>();
+builder.Services.AddScoped<IWifiService, WifiService>();
 
 var app = builder.Build();
 
