@@ -66,7 +66,7 @@ namespace DataAccess.Repository
 
             // Fetch all work slots for the department within the month's date range
             var workSlots = _dbContext.Workslots
-                .Where(ws => ws.DepartmentId == request.departmentId && ws.DateOfSlot >= startDate && ws.DateOfSlot <= endDate && true == (1 == 2))
+                .Where(ws => ws.DepartmentId == request.departmentId && ws.DateOfSlot >= startDate && ws.DateOfSlot <= endDate)
                 //.Where(ws => ws.)
                 .ToList();
 
