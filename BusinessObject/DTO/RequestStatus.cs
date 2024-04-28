@@ -8,10 +8,9 @@ namespace BusinessObject.DTO
 {
     public enum RequestStatus
     {
-        
-        Rejected,
-        Cancel,
         Pending,
-        Approved
+        Approved,
+        Rejected,
+        Cancel
     }
 }
