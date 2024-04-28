@@ -626,7 +626,7 @@ namespace DataAccess.Repository
             // Step 1: Retrieve the Request by requestId
             var request = await _dbContext.Requests
                                           .Include(r => r.RequestWorkTime)
-                                          .ThenInclude(rwt => rwt.WorkslotEmployee)
+                                          .ThenInclude(rwt => rwt.WorkslotEmployee).ThenInclude(we => we.Workslot)
                                           .FirstOrDefaultAsync(r => r.Id == requestId);
 
             if (request == null)
@@ -647,7 +647,7 @@ namespace DataAccess.Repository
             //                                        .ToListAsync();
 
             var morningId = request.RequestWorkTime.WorkslotEmployeeMorningId;
-            var morningSlot = _dbContext.WorkslotEmployees.FirstOrDefault(we => we.Id == morningId);
+            var morningSlot = _dbContext.WorkslotEmployees.Include(w => w.Workslot).FirstOrDefault(we => we.Id == morningId);
             var afternoonSlot = request.RequestWorkTime.WorkslotEmployee;
 
             // Step 3: Update the AttendanceStatus for these WorkslotEmployees

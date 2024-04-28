@@ -1089,6 +1089,23 @@ namespace DataAccess.Repository
 
             // Parse the MaxDateLeaves JSON string
             var maxDateLeaves = JsonSerializer.Deserialize<List<MaxDateLeavesDTO>>(workTrackSetting.MaxDateLeaves);
+            if (workTrackSetting.MaxDateLeaves == "[]")
+            {
+                Dictionary<Guid, int> leaveTypeMaxDays = new Dictionary<Guid, int>
+        {
+            { Guid.Parse("790F290E-4CBD-11EE-BE56-0242AC120002"), 6 },
+            { Guid.Parse("790F2378-4CBD-11EE-BE56-0242AC120002"), 8 },
+            { Guid.Parse("790F277E-4CBD-11EE-BE56-0242AC120002"), 2 },
+            { Guid.Parse("790F24A4-4CBD-11EE-BE56-0242AC120002"), 7 },
+            { Guid.Parse("790F20A8-4CBD-11EE-BE56-0242AC120002"), 9 },
+            { Guid.Parse("790F25C6-4CBD-11EE-BE56-0242AC120002"), 5 }
+        };
+                maxDateLeaves.Add(new MaxDateLeavesDTO
+                {
+                    Year = 2024,
+                    LeaveTypeMaxDays = leaveTypeMaxDays
+                });
+            }
             var currentYearLeaveInfo = maxDateLeaves.FirstOrDefault(l => l.Year == currentYear)?.LeaveTypeMaxDays[leaveTypeId];
 
             var approvedLeaves = await _dbContext.Requests
