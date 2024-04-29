@@ -556,6 +556,19 @@ namespace DataAccess.Repository
                     endTime = "00:00",
                     period = ""
                 });
+
+                foreach (var ot in overtimeRequests)
+                {
+                    slots.Add(new
+                    {
+                        title = "Overtime",
+                        date = date.ToString("yyyy-MM-dd"),
+                        startTime = ot.RequestOverTime.FromHour.ToString("HH:mm"),
+                        endTime = ot.RequestOverTime.ToHour.ToString("HH:mm"),
+                        employeeName = $"{ot.EmployeeSendRequest.FirstName} {ot.EmployeeSendRequest.LastName}",
+                        period = ""
+                    });
+                }
             }
 
             return slots;
